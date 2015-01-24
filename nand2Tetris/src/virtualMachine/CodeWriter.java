@@ -162,24 +162,24 @@ public class CodeWriter {
 		String trueLabel = uniqueLabel(operator);
 		String falseLabel = uniqueLabel("N" + operator);
 		try {
-			bw.write("@SP\n");// initialize A to the Stack Pointer at RAM[0]
-			bw.write("AM=M-1\n"); // decrement the Stack Pointer and initialize A to the RAM[address] of y
+			bw.write("@SP\n");// initialize A to 0
+			bw.write("AM=M-1\n"); // decrement the SP and initialize A to SP - 1, the RAM[address] of y
 			bw.write("D=M\n");// initialize D to y
-			bw.write("A=A-1\n"); // initialize A to the RAM[address] of x
+			bw.write("A=A-1\n"); // initialize A to SP - 2, the RAM[address] of x
 			bw.write("D=M-D\n");// initialize D to x - y
-			bw.write("@" + trueLabel + "\n"); // label to jump if comparison evaluates to true
-			bw.write("D;J" + operator + "\n");// jump if comparison evaluates to true
+			bw.write("@" + trueLabel + "\n"); // initialize A to label for jumping to if comparison evaluates to true
+			bw.write("D;J" + operator + "\n");// jump if the comparison evaluates to true
 			bw.write("@0\n");// else, initialize A to 0
 			bw.write("D=A\n");// initialize D to 0
-			bw.write("@" + falseLabel + "\n"); // label to jump to since comparison evaluated to false
-			bw.write("0;JMP\n");// unconditional jump
+			bw.write("@" + falseLabel + "\n"); // initialize A to label for jumping to if comparison evaluates to false
+			bw.write("0;JMP\n");// unconditional jump to label for false comparison
 			bw.write("(" + trueLabel + ")\n"); // jump here if comparison evaluates to true
 			bw.write("@0\n");// initialize A to 0
 			bw.write("D=A-1\n");// initialize D to -1
 			bw.write("(" + falseLabel + ")\n"); // jump here if comparison evaluates to false
 			bw.write("@SP\n");// initialize A to 0
-			bw.write("A=M-1\n");// initialize A to the RAM[address] of x
-			bw.write("M=D\n");// initialize the RAM[address] of x to 0 (if false) or -1 (if true)
+			bw.write("A=M-1\n");// initialize A to the RAM[address] of the top value in the stack
+			bw.write("M=D\n");// initialize the top value in the stack to 0 (if false) or -1 (if true)
 		} catch (IOException ioe) {
 			System.err.println("Couldn't write comparison " + operator + " to output!");
 			ioe.printStackTrace();
@@ -610,12 +610,13 @@ public class CodeWriter {
 	 */
 	public void writeIf(String label) {
 		String local = localFunction(label);
-		System.out.println("\t\twriting if for " + local);
+		System.out.println("\t\twriting if-goto for " + local);
 		writePopStackToD();
 		try {
 			bw.write("@" + local + "\n"); // initialize A to (label)
-			bw.write("D=M\n"); // initialize D to label
-			bw.write("D;JNE\n"); // if D != 0, jump to label, else continue
+			// bw.write("D=M\n"); // initialize D to label???
+			// bw.write("A=M\n"); // initialize A to RAM[label]???
+			bw.write("D;JNE\n"); // if D != 0, jump to label; else continue
 		} catch (IOException ioe) {
 			System.err.println("Couldn't write if-goto " + local + " to output!");
 			ioe.printStackTrace();
@@ -653,12 +654,12 @@ public class CodeWriter {
 	public void writeReturn() {
 		try {
 			if (returningAgain) {
-				bw.write("@$RETURN_\n"); // initialize A to the label for return code
+				bw.write("@$RETURN\n"); // initialize A to the label for return code
 				bw.write("0;JMP\n"); // jump to the return code
 				return;
 			}
 
-			bw.write("($RETURN_)\n"); // initialize A to the label for return code
+			bw.write("($RETURN)\n"); // initialize A to the label for return code
 			// FRAME = LCL (FRAME is a temporary variable)
 			bw.write("@LCL\n"); // initialize A to 1
 			bw.write("D=M\n"); // initialize D to LCL
@@ -677,7 +678,9 @@ public class CodeWriter {
 			bw.write("A=M\n"); // initialize A to ARG
 			bw.write("M=D\n"); // initialize RAM[ARG] to pop()
 			// SP = ARG + 1 (restore SP of the caller)
-			writeRestoreSP();
+			bw.write("D=A\n"); // initialize D to ARG
+			bw.write("@SP\n"); // initialize A to 0
+			bw.write("M=D+1\n"); // initialize SP to ARG + 1
 			// THAT = *(FRAME - 1) (restore THAT of the caller)
 			writeRestoreSeg("THAT", 1);
 			// THIS = *(FRAME - 2) (restore THIS of the caller)
@@ -706,7 +709,8 @@ public class CodeWriter {
 	 */
 	public void writeCall(String function, int args) {
 		// the return-address needs to be a unique label for every call.
-		String returnAddress = uniqueLabel("Return_" + function + "_" + args);
+		// String returnAddress = uniqueLabel("Return_" + function + "_" + args);
+		String returnAddress = localFunction(function);
 		try {
 			// push return-address (using the label declared below)
 			bw.write("@" + returnAddress + "\n"); // initialize A to (return-address)
@@ -753,24 +757,6 @@ public class CodeWriter {
 	}
 
 	/**
-	 * restore the SP of the caller
-	 */
-	private void writeRestoreSP() {
-		try {
-			bw.write("@ARG\n"); // initialize A to 2
-			bw.write("D=M\n"); // initialize D to ARG
-			bw.write("@1\n"); // initialize A to 1
-			bw.write("D=D+A\n"); // initialize D to ARG + 1
-			bw.write("@SP\n"); // initialize A to 0
-			bw.write("M=D\n"); // initialize SP to ARG + 1
-		} catch (IOException ioe) {
-			System.err.println("Couldn't write restore SP to output!");
-			ioe.printStackTrace();
-			System.exit(1);
-		}
-	}
-
-	/**
 	 * restore the segment of the caller, positioned |index| segments before FRAME
 	 * 
 	 * @param segment
@@ -801,7 +787,7 @@ public class CodeWriter {
 	 * @return
 	 */
 	public String localFunction(String label) {
-		return currentFunction + "_" + label;
+		return currentFunction + "$" + label;
 	}
 
 }

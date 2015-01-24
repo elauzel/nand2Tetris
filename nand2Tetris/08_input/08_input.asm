@@ -2,7 +2,7 @@
 D=A
 @SP
 M=D
-@$Return_Sys.init_0_0
+@null$Sys.init
 D=A
 @SP
 AM=M+1
@@ -46,7 +46,7 @@ D=M
 M=D
 @Sys.init
 0;JMP
-($Return_Sys.init_0_0)
+(null$Sys.init)
 	//function Sys.init 0     
 @32000// sync
 (Sys.init)
@@ -60,7 +60,7 @@ A=A-1
 M=D
 	//call Main.fibonacci 1   
 @32002// sync
-@$Return_Main.fibonacci_1_1
+@Sys.init$Main.fibonacci
 D=A
 @SP
 AM=M+1
@@ -104,13 +104,13 @@ D=M
 M=D
 @Main.fibonacci
 0;JMP
-($Return_Main.fibonacci_1_1)
+(Sys.init$Main.fibonacci)
 	//label WHILE             
 @32003// sync
-(Sys.init_WHILE)
+(Sys.init$WHILE)
 	//goto WHILE              
 @32004// sync
-@Sys.init_WHILE
+@Sys.init$WHILE
 0;JMP
 	//function Main.fibonacci 0
 @32005// sync
@@ -141,16 +141,16 @@ AM=M-1
 D=M
 A=A-1
 D=M-D
-@$LT_2
+@$LT_0
 D;JLT
 @0
 D=A
-@$NLT_3
+@$NLT_1
 0;JMP
-($LT_2)
+($LT_0)
 @0
 D=A-1
-($NLT_3)
+($NLT_1)
 @SP
 A=M-1
 M=D
@@ -159,16 +159,16 @@ M=D
 @SP
 AM=M-1
 D=M
-@Main.fibonacci_IF_TRUE
-D=M
+@IF_TRUE
+A=M
 D;JNE
 	//goto IF_FALSE           
 @32010// sync
-@Main.fibonacci_IF_FALSE
+@Main.fibonacci$IF_FALSE
 0;JMP
 	//label IF_TRUE           
 @32011// sync
-(Main.fibonacci_IF_TRUE)
+(Main.fibonacci$IF_TRUE)
 	//push argument 0         
 @32012// sync
 @ARG
@@ -182,7 +182,7 @@ A=A-1
 M=D
 	//return                  
 @32013// sync
-($RETURN_)
+($RETURN)
 @LCL
 D=M
 @R13
@@ -199,12 +199,9 @@ D=M
 @ARG
 A=M
 M=D
-@ARG
-D=M
-@1
-D=D+A
+D=A
 @SP
-M=D
+M=D+1
 @R13
 D=M
 @1
@@ -238,7 +235,7 @@ A=M
 0;JMP
 	//label IF_FALSE          
 @32014// sync
-(Main.fibonacci_IF_FALSE)
+(Main.fibonacci$IF_FALSE)
 	//push argument 0         
 @32015// sync
 @ARG
@@ -267,7 +264,7 @@ A=A-1
 M=M-D
 	//call Main.fibonacci 1   
 @32018// sync
-@$Return_Main.fibonacci_1_4
+@Main.fibonacci$Main.fibonacci
 D=A
 @SP
 AM=M+1
@@ -311,7 +308,7 @@ D=M
 M=D
 @Main.fibonacci
 0;JMP
-($Return_Main.fibonacci_1_4)
+(Main.fibonacci$Main.fibonacci)
 	//push argument 0         
 @32019// sync
 @ARG
@@ -340,7 +337,7 @@ A=A-1
 M=M-D
 	//call Main.fibonacci 1   
 @32022// sync
-@$Return_Main.fibonacci_1_5
+@Main.fibonacci$Main.fibonacci
 D=A
 @SP
 AM=M+1
@@ -384,7 +381,7 @@ D=M
 M=D
 @Main.fibonacci
 0;JMP
-($Return_Main.fibonacci_1_5)
+(Main.fibonacci$Main.fibonacci)
 	//add                     
 @32023// sync
 @SP
@@ -394,5 +391,5 @@ A=A-1
 M=M+D
 	//return                  
 @32024// sync
-@$RETURN_
+@$RETURN
 0;JMP
