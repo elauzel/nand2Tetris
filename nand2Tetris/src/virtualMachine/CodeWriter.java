@@ -18,6 +18,7 @@ public class CodeWriter {
 	private int				breakPoint;
 
 	private String			inputFileName;
+	private String			currentFunction;
 
 	private boolean			returningAgain;
 
@@ -47,9 +48,8 @@ public class CodeWriter {
 		}
 
 		bw = new BufferedWriter(fw);
-
 		returningAgain = false;
-
+		currentFunction = null;
 		breakPoint = 32000;
 	}
 
@@ -574,11 +574,12 @@ public class CodeWriter {
 	 * @param label
 	 */
 	public void writeLabel(String label) {
-		System.out.println("\t\twriting label for " + label);
+		String local = localFunction(label);
+		System.out.println("\t\twriting label for " + local);
 		try {
-			bw.write("(" + label + ")\n"); // write (label)
+			bw.write("(" + local + ")\n"); // write (label)
 		} catch (IOException ioe) {
-			System.err.println("Couldn't write label " + label + " to output!");
+			System.err.println("Couldn't write label (" + local + ") to output!");
 			ioe.printStackTrace();
 			System.exit(1);
 		}
@@ -590,12 +591,13 @@ public class CodeWriter {
 	 * @param label
 	 */
 	public void writeGoto(String label) {
-		System.out.println("\t\twriting goto for " + label);
+		String local = localFunction(label);
+		System.out.println("\t\twriting goto for " + local);
 		try {
-			bw.write("@" + label + "\n"); // initialize A to (label)
+			bw.write("@" + local + "\n"); // initialize A to (label)
 			bw.write("0;JMP\n"); // jump to label
 		} catch (IOException ioe) {
-			System.err.println("Couldn't write goto " + label + " to output!");
+			System.err.println("Couldn't write goto " + local + " to output!");
 			ioe.printStackTrace();
 			System.exit(1);
 		}
@@ -607,14 +609,15 @@ public class CodeWriter {
 	 * @param label
 	 */
 	public void writeIf(String label) {
-		System.out.println("\t\twriting if for " + label);
+		String local = localFunction(label);
+		System.out.println("\t\twriting if for " + local);
 		writePopStackToD();
 		try {
-			bw.write("@" + label + "\n"); // initialize A to label
-			bw.write("D=M\n"); // initialize D to RAM[label]
-			bw.write("D;JNE\n"); // if D != 0, jump to RAM[label], else continue
+			bw.write("@" + local + "\n"); // initialize A to (label)
+			bw.write("D=M\n"); // initialize D to label
+			bw.write("D;JNE\n"); // if D != 0, jump to label, else continue
 		} catch (IOException ioe) {
-			System.err.println("Couldn't write if-goto " + label + " to output!");
+			System.err.println("Couldn't write if-goto " + local + " to output!");
 			ioe.printStackTrace();
 			System.exit(1);
 		}
@@ -627,9 +630,16 @@ public class CodeWriter {
 	 * @param vars
 	 */
 	public void writeFunction(String function, int vars) {
+		currentFunction = function;
 		// (f) (declare a label for the function entry)
-		writeLabel(function);
-		// writeLabel(uniqueLabel(function));
+		// writeLabel(function);
+		try {
+			bw.write("(" + function + ")\n"); // write (label)
+		} catch (IOException ioe) {
+			System.err.println("Couldn't write label (" + function + ") to output!");
+			ioe.printStackTrace();
+			System.exit(1);
+		}
 		// repeat k times: (k = number of local variables)
 		for (int i = 0; i < vars; i++) {
 			// push 0 (initialize all of them to 0)
@@ -645,11 +655,10 @@ public class CodeWriter {
 			if (returningAgain) {
 				bw.write("@$RETURN_\n"); // initialize A to the label for return code
 				bw.write("0;JMP\n"); // jump to the return code
-				// writeGoto("$:RETURN_"); // jump to the return code
 				return;
 			}
 
-			writeLabel("$RETURN_");// label for easy jumping from subsequent returns
+			bw.write("($RETURN_)\n"); // initialize A to the label for return code
 			// FRAME = LCL (FRAME is a temporary variable)
 			bw.write("@LCL\n"); // initialize A to 1
 			bw.write("D=M\n"); // initialize D to LCL
@@ -732,9 +741,10 @@ public class CodeWriter {
 			bw.write("@LCL\n"); // initialize A to 1
 			bw.write("M=D\n"); // initialize LCL to SP
 			// goto f (transfer control)
-			writeGoto(function);
+			bw.write("@" + function + "\n"); // initialize A to (function)
+			bw.write("0;JMP\n"); // initialize A to 0
 			// (return-address) (declare a label for the return-address)
-			writeLabel(returnAddress);
+			bw.write("(" + returnAddress + ")\n"); // write (return-address)
 		} catch (IOException ioe) {
 			System.err.println("Couldn't write call " + function + " " + args + " to output!");
 			ioe.printStackTrace();
@@ -781,6 +791,17 @@ public class CodeWriter {
 			System.exit(1);
 		}
 
+	}
+
+	/**
+	 * Returns a label appropriate for local function scope
+	 * 
+	 * @param function
+	 * @param label
+	 * @return
+	 */
+	public String localFunction(String label) {
+		return currentFunction + "_" + label;
 	}
 
 }

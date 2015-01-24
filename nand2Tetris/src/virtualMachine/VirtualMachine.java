@@ -9,7 +9,7 @@ import java.util.ArrayList;
  */
 public class VirtualMachine {
 	private static final String		INPUT			= "08_input/";
-	private static final String[]	functionCalling	= { "Sys.vm" };
+	private static final String[]	functionCalling	= { "Sys.vm", "Main.vm" };
 
 	/**
 	 * Program entry point
