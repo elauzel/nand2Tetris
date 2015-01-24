@@ -9,7 +9,7 @@ import java.util.ArrayList;
  */
 public class VirtualMachine {
 	private static final String		INPUT			= "08_input/";
-	private static final String[]	functionCalling	= { "Sys.vm", "Main.vm" };
+	private static final String[]	functionCalling	= { "Sys.vm", "Class1.vm", "Class2.vm" };
 
 	/**
 	 * Program entry point
@@ -36,7 +36,7 @@ public class VirtualMachine {
 			String fullFile = program.getName();
 			String fileName = fullFile.substring(0, fullFile.lastIndexOf("."));
 			System.out.println("fileName:\t" + fileName);
-			System.out.println("Creating Parser for " + filePath + fileName + ".vm");
+			System.out.println("Creating Parser for " + fileName + ".vm");
 			Parser p = new Parser(filePath + fileName + ".vm");
 
 			if (!filePath.equals(lastPath)) { // new folder
@@ -44,14 +44,12 @@ public class VirtualMachine {
 				lastPath = filePath;
 				System.out.println("Creating CodeWriter for " + filePath + folderName + ".asm:");
 				cw = new CodeWriter(filePath + folderName + ".asm");
-				System.out.println("Setting fileName for CodeWriter of " + filePath + fileName
-						+ ".asm - Parsed Assembly:");
-				cw.setFileName(filePath + fileName + ".asm");
+				System.out.println("Setting fileName for CodeWriter of " + fileName + ".asm - Parsed Assembly:");
+				cw.setFileName(fileName + ".asm");
 				cw.writeInit();
 			} else {
-				System.out.println("Setting fileName for CodeWriter of " + filePath + fileName
-						+ ".asm - Parsed Assembly:");
-				cw.setFileName(filePath + fileName + ".asm");
+				System.out.println("Setting fileName of " + fileName + ".asm for CodeWriter - Parsed Assembly:");
+				cw.setFileName(fileName + ".asm");
 			}
 
 			while (p.hasMoreCommands()) {

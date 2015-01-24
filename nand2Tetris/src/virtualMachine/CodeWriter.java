@@ -59,8 +59,8 @@ public class CodeWriter {
 	 * @param fileName
 	 */
 	public void setFileName(String fileName) {
-		inputFileName = fileName.substring(0, fileName.indexOf('.'));
-		System.out.println("Input File Name: " + inputFileName);
+		inputFileName = fileName;
+		// System.out.println("Input File Name: " + inputFileName);
 	}
 
 	/**
@@ -614,7 +614,7 @@ public class CodeWriter {
 		writePopStackToD();
 		try {
 			bw.write("@" + local + "\n"); // initialize A to (label)
-			// bw.write("D=M\n"); // initialize D to label???
+			// bw.write("D=M\n"); // initialize D to RAM[label]???
 			// bw.write("A=M\n"); // initialize A to RAM[label]???
 			bw.write("D;JNE\n"); // if D != 0, jump to label; else continue
 		} catch (IOException ioe) {
@@ -709,8 +709,7 @@ public class CodeWriter {
 	 */
 	public void writeCall(String function, int args) {
 		// the return-address needs to be a unique label for every call.
-		// String returnAddress = uniqueLabel("Return_" + function + "_" + args);
-		String returnAddress = localFunction(function);
+		String returnAddress = uniqueLabel("Return_" + function + "_" + args);
 		try {
 			// push return-address (using the label declared below)
 			bw.write("@" + returnAddress + "\n"); // initialize A to (return-address)
