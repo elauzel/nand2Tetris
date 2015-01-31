@@ -1,0 +1,111 @@
+class Util { 
+    static int printY;
+
+    /** Initializes some variables. */
+    function void init() {
+        let printY = 12;
+
+        return;
+    }
+
+    /** returns the integer portion of a%b */ 
+    function int mod(int a, int b) { 
+        var int q; 
+        var int remainder; 
+
+        let q = Math.divide(a,b); 
+        let remainder = a - (b * q); 
+        return remainder; 
+    } 
+
+    /** prints a String and then disposes of it. */
+    function void println(String message, int row, int column) {
+        do Output.moveCursor(row, column);
+    	do Output.printString(message);
+    	do message.dispose();
+
+        return;
+    }
+
+    /** prints a String and then disposes of it. */
+    function void printDebug(String message, int column) {
+        do Util.println(message, printY, column);
+        if (printY < 22) {
+            let printY = printY + 1;
+        } else {
+            let printY = 1;
+        }
+
+        return;
+    }
+
+    /** concatenates two Strings then returns the new String. */
+    function String concat(String s1, String s2, boolean disposing) {
+        var int length, length1, length2, counter;
+        var char temp;
+        var String sNew;
+        
+        let length1 = s1.length();
+        let length2 = s2.length();
+        let length = length1 + length2;
+        let sNew = String.new(length);
+        
+        let counter = 0;
+        while (counter < length) {
+            if (counter < length1) {
+                let temp = s1.charAt(counter);
+            } else {
+                let temp = s2.charAt(counter - length1);
+            }
+            let sNew = sNew.appendChar(temp);
+            let counter = counter + 1;
+        }
+
+        if (disposing) {
+            do s1.dispose();
+            do s2.dispose();
+        }
+
+        return sNew;
+    }
+
+    /** converts an Array of integers to a String representation. */
+    function int arrayToString(Array data, int length) {
+        var int counter;
+        var String sData, sTemp;
+
+        let sData = String.new(length);
+        let sTemp = String.new(1);
+
+        let counter = 0;
+        while (counter < length) {
+            do sTemp.setInt(data[counter]);
+            let sData = sData.appendChar(sTemp.charAt(0));
+            let counter = counter + 1;
+        }
+
+        do sTemp.dispose();
+
+        return sData;
+    }
+
+    /** compares two Strings for equality. */
+    function boolean stringCompare(String s1, String s2) {
+        var int length, counter;
+
+        let length = s1.length();
+
+        if (~(length = s2.length())) {
+            return false;
+        }
+
+        let counter = 0;
+        while (counter < length) {
+            if (~(s1.charAt(counter) = s2.charAt(counter))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+} 
