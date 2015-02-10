@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+import static utility.Utils.*;
+
 /**
  * Handles the parsing of a single .vm file, and encapsulates access to the input code. It reads VM commands, parses them, and provides convenient
  * access to their components. In addition, it removes all white space and comments
@@ -13,7 +15,6 @@ import java.io.IOException;
  *
  */
 public class Parser {
-
 	private String			currentLine;
 
 	private BufferedReader	br;
@@ -33,7 +34,6 @@ public class Parser {
 		}
 
 		currentLine = "";
-
 	}
 
 	/**
@@ -56,8 +56,8 @@ public class Parser {
 			ready = br.ready();
 		} catch (IOException ioe) {
 			System.err.println("The file isn't ready to be read!");
-			// ioe.printStackTrace();
-			// System.exit(1);
+			ioe.printStackTrace();
+			System.exit(1);
 		}
 		return ready;
 	}
@@ -79,13 +79,12 @@ public class Parser {
 	}
 
 	/**
-	 * Removes spaces and comments in the current line
+	 * Removes comments and extra whitespace in the current line
 	 */
 	private void formatLine() {
 		int index = currentLine.indexOf("//");
 		if ((index != -1)) currentLine = currentLine.substring(0, index);
-		currentLine = currentLine.replaceAll("\\s+", " ");
-		currentLine = currentLine.trim();
+		currentLine = removeWhitespace(currentLine);
 	}
 
 	/**
@@ -149,13 +148,7 @@ public class Parser {
 				type = CommandType.C_CALL;
 				break;
 			default:
-				try {
-					throw new Exception();
-				} catch (Exception e) {
-					System.out.println("Invalid CommandType " + args[0]);
-					e.printStackTrace();
-					System.exit(1);
-				}
+				throwException("Invalid CommandType " + args[0]);
 		}
 		return type;
 	}
@@ -194,13 +187,7 @@ public class Parser {
 				type = SegmentType.S_TEMP;
 				break;
 			default:
-				try {
-					throw new Exception();
-				} catch (Exception e) {
-					System.out.println("Invalid segment type " + segment);
-					e.printStackTrace();
-					System.exit(1);
-				}
+				throwException("Invalid segment type " + segment);
 		}
 		return type;
 	}
@@ -238,8 +225,6 @@ public class Parser {
 				args = currentLine.split(" ");
 				return args[1];
 			default:
-				// System.out.println("arg1() should not be called on " + type);
-				// System.exit(1);
 				return null;
 		}
 	}
@@ -266,8 +251,6 @@ public class Parser {
 				args = currentLine.split(" ");
 				return Integer.parseInt(args[2]);
 			default:
-				// System.out.println("arg2() should not be called on " + type);
-				// System.exit(1);
 				return Integer.MIN_VALUE;
 		}
 	}

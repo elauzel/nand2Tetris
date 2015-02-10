@@ -1,9 +1,9 @@
 package virtualMachine;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+
+import static utility.Utils.*;
 
 /**
  * Translates VM commands into Hack assembly code
@@ -28,26 +28,7 @@ public class CodeWriter {
 	 * @param inputFile
 	 */
 	public CodeWriter(String inputFile) {
-		File outputFile = new File(inputFile);
-
-		if (!outputFile.exists()) try {
-			outputFile.createNewFile();
-		} catch (IOException ioe) {
-			System.err.println("Couldn't create output file " + inputFile + "!");
-			ioe.printStackTrace();
-			System.exit(1);
-		}
-
-		FileWriter fw = null;
-		try {
-			fw = new FileWriter(outputFile.getAbsoluteFile());
-		} catch (IOException ioe) {
-			System.err.println("Couldn't create FileWriter!");
-			ioe.printStackTrace();
-			System.exit(1);
-		}
-
-		bw = new BufferedWriter(fw);
+		bw = bufferedWriterFor(inputFile);
 		returningAgain = false;
 		currentFunction = null;
 		breakPoint = 32000;
@@ -60,7 +41,7 @@ public class CodeWriter {
 	 */
 	public void setFileName(String fileName) {
 		inputFileName = fileName;
-		// System.out.println("Input File Name: " + inputFileName);
+		// DEBUG_PRINT("Input File Name: " + inputFileName);
 	}
 
 	/**
@@ -133,13 +114,7 @@ public class CodeWriter {
 				notNeg("!");
 				break;
 			default:
-				try {
-					throw new Exception();
-				} catch (Exception e) {
-					System.err.println("Invalid command \"" + command + "\"!");
-					e.printStackTrace();
-					System.exit(1);
-				}
+				throwException("Invalid command \"" + command + "\"!");
 		}
 	}
 
@@ -258,13 +233,7 @@ public class CodeWriter {
 				writePop(segment, index);// if we are popping
 				break;
 			default:
-				try {
-					throw new Exception();
-				} catch (Exception e) {
-					System.err.println("Invalid CommandType \"" + type + "\"!");
-					e.printStackTrace();
-					System.exit(1);
-				}
+				throwException("Invalid CommandType \"" + type + "\"!");
 		}
 	}
 
@@ -301,13 +270,7 @@ public class CodeWriter {
 				writeSegToD("THIS", index);
 				break;
 			default:
-				try {
-					throw new Exception();
-				} catch (Exception e) {
-					System.err.println("Invalid segment \"" + segment + "\"!");
-					e.printStackTrace();
-					System.exit(1);
-				}
+				throwException("Invalid segment \"" + segment + "\"!");
 		}
 		writePushDToStack();
 	}
@@ -344,13 +307,7 @@ public class CodeWriter {
 				writeDToSeg("THIS", index);
 				break;
 			default:
-				try {
-					throw new Exception();
-				} catch (Exception e) {
-					System.err.println("Invalid segment \"" + segment + "\"!");
-					e.printStackTrace();
-					System.exit(1);
-				}
+				throwException("Invalid segment \"" + segment + "\"!");
 		}
 	}
 
@@ -614,8 +571,6 @@ public class CodeWriter {
 		writePopStackToD();
 		try {
 			bw.write("@" + local + "\n"); // initialize A to (label)
-			// bw.write("D=M\n"); // initialize D to RAM[label]???
-			// bw.write("A=M\n"); // initialize A to RAM[label]???
 			bw.write("D;JNE\n"); // if D != 0, jump to label; else continue
 		} catch (IOException ioe) {
 			System.err.println("Couldn't write if-goto " + local + " to output!");
@@ -633,7 +588,6 @@ public class CodeWriter {
 	public void writeFunction(String function, int vars) {
 		currentFunction = function;
 		// (f) (declare a label for the function entry)
-		// writeLabel(function);
 		try {
 			bw.write("(" + function + ")\n"); // write (label)
 		} catch (IOException ioe) {

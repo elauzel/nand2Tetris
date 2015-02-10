@@ -10,6 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
+import static utility.Utils.*;
+
 /**
  * Encapsulates access to the input code. Reads an assembly language command, parses it, and provides convenient access to the command's components
  * (fields and symbols). In addition, removes all white space and comments.
@@ -18,9 +20,6 @@ import java.util.ArrayList;
  *
  */
 public class Parser {
-	// private static final String INPUT = "./06_input/";
-	// private static final String OUTPUT = "./06_output/";
-
 	private static int	lineNumber;
 	private static int	romAddress;
 
@@ -42,19 +41,18 @@ public class Parser {
 		for (String line : assembly) {
 			scanForSymbols(line);
 		}
-		// System.out.println("\nSymbol Table (" + SymbolTable.getTable().size() + "): " + SymbolTable.getTable() + "\n");
 
-		// lineNumber = 0;
 		ArrayList<String> binary = new ArrayList<String>(assembly.size());
 		for (String line : assembly) {
+			line = removeWhitespace(line);
 			String binaryCommand = advance(line);
-			// System.out.println("Binary Command after advance(): " + binaryCommand);
+			// DEBUG_PRINT("Binary Command after advance(): " + binaryCommand);
 			if (commandType(line) != "L_COMMAND") {
 				binary.add(binaryCommand);
 			}
 		}
 		binary.trimToSize();
-		// System.out.println("\nBinary:\n" + binary);
+		// DEBUG_PRINT("\nBinary:\n" + binary);
 		writeBinary(binary, program.getAbsolutePath().replace(".asm", ".hack"));
 	}
 
@@ -73,7 +71,6 @@ public class Parser {
 		} else {
 			lineNumber++;
 		}
-		// if (type != "L_COMMAND") lineNumber++;
 
 	}
 
@@ -82,7 +79,7 @@ public class Parser {
 	 * is no current command.
 	 */
 	private static String advance(String line) {
-		// System.out.println("=======\tAssembly Command " + lineNumber++ + ": " + line);
+		// DEBUG_PRINT("=======\tAssembly Command " + lineNumber++ + ":\t\"" + line + "\"");
 		String binaryCommand = null;
 		switch (commandType(line)) {
 			case "C_COMMAND":
@@ -94,13 +91,7 @@ public class Parser {
 			default:
 				binaryCommand = binaryL(line);
 		}
-		// if (commandType(line).equals("C_COMMAND")) {
-		// binaryCommand = binaryC(line);
-		// } else if (commandType(line).equals("A_COMMAND")) {
-		// binaryCommand = binaryA(line);
-		// } else {
-		// binaryCommand = binaryL(line);
-		// }
+
 		return binaryCommand;
 	}
 
@@ -113,9 +104,6 @@ public class Parser {
 	private static String binaryL(String line) {
 		String label = labelFromAssembly(line);
 		return SymbolTable.binaryFromSymbol(label);
-		// String binary = SymbolTable.binaryFromSymbol(label);
-		// System.out.println("L - Binary Command from label: " + binary);
-		// return binary;
 	}
 
 	/**
@@ -138,7 +126,7 @@ public class Parser {
 			}
 			binary = SymbolTable.binaryFromSymbol(variable);
 		}
-		// System.out.println("A - Binary Command from variable: " + binary);
+		// DEBUG_PRINT("A - Binary Command from variable:\t" + binary);
 		return binary;
 	}
 
@@ -152,12 +140,8 @@ public class Parser {
 		String compBin = Code.binaryFromComp(compFromAssembly(line));
 		String destBin = Code.binaryFromDest(destFromAssembly(line));
 		String jumpBin = Code.binaryFromJump(jumpFromAssembly(line));
-		// String threeFields = Code.binaryFromComp(compFromAssembly(line)) + Code.binaryFromDest(destFromAssembly(line))
-		// + Code.binaryFromJump(jumpFromAssembly(line));
+		// DEBUG_PRINT("C - '111' + a + comp + dest + jump from assembly:\t111" + compBin + destBin + jumpBin);
 		return "111" + compBin + destBin + jumpBin;
-		// String binary = "111" + threeFields;
-		// System.out.println("C - '111' + a + comp + dest + jump from assembly: " + binary);
-		// return binary;
 	}
 
 	/**
@@ -185,9 +169,6 @@ public class Parser {
 	 */
 	private static String variableFromAssembly(String assemblyCommand) {
 		return assemblyCommand.substring(1);
-		// String variable = assemblyCommand.substring(1);
-		// System.out.println("A - Symbol (variable) from assembly: " + variable);
-		// return variable;
 	}
 
 	/**
@@ -198,9 +179,6 @@ public class Parser {
 	 */
 	private static String labelFromAssembly(String assemblyCommand) {
 		return assemblyCommand.substring(1, assemblyCommand.indexOf(")"));
-		// String label = assemblyCommand.substring(1, assemblyCommand.indexOf(")"));
-		// System.out.println("L - Symbol (label) from assembly: " + label);
-		// return label;
 	}
 
 	/**
@@ -213,7 +191,7 @@ public class Parser {
 		if (assemblyCommand.contains("=")) {
 			dest = assemblyCommand.substring(0, assemblyCommand.indexOf('='));
 		}
-		// System.out.println("C - destination from assembly: " + dest + (dest == null ? " (Object)" : ""));
+		// DEBUG_PRINT("C - destination from assembly:\t\"" + dest + (dest == null ? " (Object)\"" : "\""));
 		return dest;
 	}
 
@@ -230,7 +208,7 @@ public class Parser {
 		if (comp.contains(";")) {
 			comp = comp.substring(0, comp.indexOf(";"));
 		}
-		// System.out.println("C - computation from assembly: " + comp);
+		// DEBUG_PRINT("C - computation from assembly:\t\"" + comp + "\"");
 		return comp;
 	}
 
@@ -244,7 +222,7 @@ public class Parser {
 		if (assemblyCommand.contains(";")) {
 			jump = assemblyCommand.substring(assemblyCommand.indexOf(';') + 1);
 		}
-		// System.out.println("C - jump from assembly: " + jump + (jump == null ? " (Object)" : ""));
+		// DEBUG_PRINT("C - jump from assembly:\t\"" + jump + (jump == null ? " (Object)\"" : "\""));
 		return jump;
 	}
 
@@ -260,14 +238,13 @@ public class Parser {
 			String line = null;
 			while (br.ready()) {
 				// get the line without whitespace
-				line = br.readLine().replaceAll("\\s+", " ");
+				line = removeWhitespace(br.readLine());
 				// remove all comments
 				if (line.contains("//")) {
 					line = line.substring(0, line.indexOf("//"));
 				}
 				// add it to assembly if it isn't null or empty
 				if (!(line == null || line.isEmpty())) {
-					// System.out.println("Assembly Command " + lineNum++ + ": " + line);
 					assembly.add(line);
 				}
 			}
