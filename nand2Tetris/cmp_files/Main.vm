@@ -1,0 +1,84 @@
+function Main.main 2 // Returns void
+push constant 8001
+push constant 16
+push constant 1
+neg
+call Main.fillMemory 3
+pop temp 0
+push constant 8000
+call Memory.peek 1
+pop local 1 // VAR value
+call Main.convert 1
+push constant 0
+return
+function Main.convert 3 // Returns void
+push constant 1
+neg
+pop local 2 // VAR loop
+label $WHILE_EXP__0
+if-goto $WHILE_END__1
+push constant 1
+add
+pop local 1 // VAR position
+call Main.nextMask 1
+pop local 0 // VAR mask
+push constant 9000
+add
+call Memory.poke 2
+pop temp 0
+push constant 16
+gt
+not
+if-goto $L1_2
+and
+push constant 0
+not
+if-goto $L1_3
+push constant 8000
+add
+push constant 1
+call Memory.poke 2
+goto $L2_4
+label $L1_3
+push constant 8000
+add
+push constant 0
+call Memory.poke 2
+label $L2_4
+goto $L2_5
+label $L1_2
+push constant 0
+pop local 2 // VAR loop
+label $L2_5
+goto $WHILE_EXP__0
+label $WHILE_END__1
+push constant 0
+return
+function Main.nextMask 0 // Returns int
+push constant 0
+if-goto $L1_6
+push constant 1
+return
+goto $L2_7
+label $L1_6
+push constant 2
+call Math.multiply 2
+return
+label $L2_7
+function Main.fillMemory 0 // Returns void
+label $WHILE_EXP__8
+push constant 0
+gt
+if-goto $WHILE_END__9
+call Memory.poke 2
+pop temp 0
+push constant 1
+sub
+pop argument 1 // ARG length
+push constant 1
+add
+pop argument 0 // ARG startAddress
+goto $WHILE_EXP__8
+label $WHILE_END__9
+push constant 0
+return

@@ -2,6 +2,8 @@ package compiler;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+
+import utility.Segment;
 import static utility.Utils.*;
 
 /**
@@ -15,19 +17,22 @@ import static utility.Utils.*;
  *
  */
 public class CompilationEngine {
-	private static final String	OP_SYMBOLS	= "+-*/&|<>=";
+	private static final String			OP_SYMBOLS	= "+-*/&|<>=";
+	private static final SymbolTable	TABLE		= new SymbolTable();
 
-	private BufferedWriter		bw;
-
-	private JackTokenizer		tokenizer;
-
-	private int					indents;
+	private VMWriter					vmw;
+	private BufferedWriter				bw;
+	private JackTokenizer				tokenizer;
+	private String						className;
+	private int							indents;
+	private boolean						isVoid;
 
 	/**
 	 * Creates a new compilation engine with the given input and output. The next routine called must be compileClass().
 	 */
-	public CompilationEngine(String output, JackTokenizer jt) {
-		bw = bufferedWriterFor(output);
+	public CompilationEngine(String outputXML, String outputVM, JackTokenizer jt) {
+		bw = bufferedWriterFor(outputXML);
+		vmw = new VMWriter(outputVM);
 		tokenizer = jt;
 		indents = 0;
 	}
@@ -41,6 +46,8 @@ public class CompilationEngine {
 
 		// DEBUG_PRINT("<class>");
 
+		TABLE.setScope(Scope.CLASS);
+
 		// <class>
 		writeXML("class", false);
 		tokenizer.advance();
@@ -51,26 +58,36 @@ public class CompilationEngine {
 		tokenizer.advance();
 
 		// className
-		String className = expectIdentifier();
+		className = expectIdentifier();
 		writeXML("identifier", className);
 		tokenizer.advance();
 
 		// '{'
-		expectSymbol('{');
-		writeXML("symbol", "{");
-		tokenizer.advance();
+		expectOpenBrace();
 
 		// classVarDec* -> 'static' | 'field'
-		while (true) {
-			if (tokenizer.tokenType() != TokenType.KEYWORD) break;
-			if ((tokenizer.keyWord() == KeyWord.STATIC) || (tokenizer.keyWord() == KeyWord.FIELD)) {
-				compileClassVarDec();
-			} else {
-				break;
-			}
-		}
+		checkForClassVarDecs();
 
 		// subroutineDec* -> 'constructor' | 'function' | 'method'
+		checkForSubroutineDecs();
+
+		// '}'
+		expectCloseBrace();
+
+		// </class>
+		writeXML("class", true);
+
+		// DEBUG_PRINT("</class>");
+
+		if (tokenizer.hasMoreLines()) {
+			throwException("Junk after end of class definition!");
+		}
+	}
+
+	/**
+	 * Compiles all subroutine declarations.
+	 */
+	private void checkForSubroutineDecs() {
 		while (true) {
 			if (tokenizer.tokenType() != TokenType.KEYWORD) break;
 			if ((tokenizer.keyWord() == KeyWord.CONSTRUCTOR)
@@ -80,19 +97,19 @@ public class CompilationEngine {
 				break;
 			}
 		}
+	}
 
-		// '}'
-		expectSymbol('}');
-		writeXML("symbol", "}");
-		tokenizer.advance();
-
-		// </class>
-		writeXML("class", true);
-
-		// DEBUG_PRINT("</class>");
-
-		if (tokenizer.hasMoreLines()) {
-			throwException("Junk after end of class definition!");
+	/**
+	 * Compiles all class variable declarations.
+	 */
+	private void checkForClassVarDecs() {
+		while (true) {
+			if (tokenizer.tokenType() != TokenType.KEYWORD) break;
+			if ((tokenizer.keyWord() == KeyWord.STATIC) || (tokenizer.keyWord() == KeyWord.FIELD)) {
+				compileClassVarDec();
+			} else {
+				break;
+			}
 		}
 	}
 
@@ -111,41 +128,23 @@ public class CompilationEngine {
 		writeXML("classVarDec", false);
 
 		// ('static' | 'field')
-		if (tokenizer.keyWord() == KeyWord.STATIC) writeXML("keyword", "static");
-		if (tokenizer.keyWord() == KeyWord.FIELD) writeXML("keyword", "field");
+		expectKeyWord(KeyWord.STATIC, KeyWord.FIELD);
+
+		Identifier varKind;
+		if (tokenizer.keyWord() == KeyWord.STATIC) varKind = Identifier.STATIC;
+		else
+			varKind = Identifier.FIELD;
+
+		writeXML("keyword", tokenizer.keyWordStr());
 		tokenizer.advance();
 
 		// type -> 'int' | 'char' | 'boolean' | className
-		if (tokenizer.tokenType() == TokenType.KEYWORD) {
-			if (tokenizer.keyWord() == KeyWord.INT) writeXML("keyword", "int");
-			if (tokenizer.keyWord() == KeyWord.CHAR) writeXML("keyword", "char");
-			if (tokenizer.keyWord() == KeyWord.BOOLEAN) writeXML("keyword", "boolean");
-		} else {
-			String className = expectIdentifier();
-			writeXML("identifier", className);
-		}
-		tokenizer.advance();
+		String varType = checkForType();
 
-		// varName -> identifier
-		String varName = expectIdentifier();
-		writeXML("identifier", varName);
-		tokenizer.advance();
+		// varName (',' varName)* -> identifier
+		checkForVarNames(varKind, varType);
 
-		// (',' varName)*
-		while (true) {
-			if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ',') break;
-			writeXML("symbol", ",");
-			tokenizer.advance();
-
-			String varX = expectIdentifier();
-			writeXML("identifier", varX);
-			tokenizer.advance();
-		}
-
-		// ';'
-		expectSymbol(';');
-		writeXML("symbol", ";");
-		tokenizer.advance();
+		expectSemicolon();
 
 		// </classVarDec>
 		writeXML("classVarDec", true);
@@ -165,44 +164,33 @@ public class CompilationEngine {
 
 		// DEBUG_PRINT("<subroutine>");
 
+		TABLE.setScope(Scope.SUBROUTINE);
+
 		// <subroutineDec>
 		writeXML("subroutineDec", false);
 
+		TABLE.startSubroutine();
+
 		// ('constructor' | 'function' | 'method')
-		if (tokenizer.keyWord() == KeyWord.CONSTRUCTOR) writeXML("keyword", "constructor");
-		if (tokenizer.keyWord() == KeyWord.FUNCTION) writeXML("keyword", "function");
-		if (tokenizer.keyWord() == KeyWord.METHOD) writeXML("keyword", "method");
+		expectKeyWord(KeyWord.CONSTRUCTOR, KeyWord.FUNCTION, KeyWord.METHOD);
+		KeyWord subroutineType = tokenizer.keyWord();
+		writeXML("keyword", tokenizer.keyWordStr());
 		tokenizer.advance();
 
 		// ('void' | type) -> 'void' | ('int' | 'char' | 'boolean' | className)
-		if (tokenizer.tokenType() == TokenType.KEYWORD) {
-			if (tokenizer.keyWord() == KeyWord.VOID) writeXML("keyword", "void");
-			if (tokenizer.keyWord() == KeyWord.INT) writeXML("keyword", "int");
-			if (tokenizer.keyWord() == KeyWord.CHAR) writeXML("keyword", "char");
-			if (tokenizer.keyWord() == KeyWord.BOOLEAN) writeXML("keyword", "boolean");
-		}
-		if (tokenizer.tokenType() == TokenType.IDENTIFIER) {
-			String className = expectIdentifier();
-			writeXML("identifier", className);
-		}
-		tokenizer.advance();
+		String varType = checkForType(KeyWord.VOID, KeyWord.INT, KeyWord.CHAR, KeyWord.BOOLEAN);
 
 		// subroutineName -> identifier
 		String subroutineName = expectIdentifier();
 		writeXML("identifier", subroutineName);
 		tokenizer.advance();
 
-		// '(' parameterList ')' -> '(' ('int' | 'char' | 'boolean' | className) ')'
-		expectSymbol('(');
-		writeXML("symbol", "(");
-		tokenizer.advance();
+		// '(' parameterList ')'
+		expectOpenParen();
 
-		// if (tokenizer.tokenType() == TokenType.KEYWORD || tokenizer.tokenType() == TokenType.IDENTIFIER) compileParameterList();
 		compileParameterList();
 
-		expectSymbol(')');
-		writeXML("symbol", ")");
-		tokenizer.advance();
+		expectCloseParen();
 
 		// subroutineBody -> '{' varDec* statements '}'
 
@@ -211,24 +199,15 @@ public class CompilationEngine {
 		// <subroutineBody>
 		writeXML("subroutineBody", false);
 
-		expectSymbol('{');
-		writeXML("symbol", "{");
-		tokenizer.advance();
+		expectOpenBrace();
 
-		while (true) {
-			if (tokenizer.tokenType() != TokenType.KEYWORD) break;
-			if (tokenizer.keyWord() == KeyWord.VAR) {
-				compileVarDec();
-			} else {
-				break;
-			}
-		}
+		checkForVarDecs();
+
+		writeSubroutineVM(subroutineType, subroutineName, varType);
 
 		compileStatements();
 
-		expectSymbol('}');
-		writeXML("symbol", "}");
-		tokenizer.advance();
+		expectCloseBrace();
 
 		// </subroutineBody>
 		writeXML("subroutineBody", true);
@@ -239,6 +218,30 @@ public class CompilationEngine {
 		writeXML("subroutineDec", true);
 
 		// DEBUG_PRINT("</subroutine>");
+	}
+
+	/**
+	 * Compiles VM for subroutines.
+	 * 
+	 * @param subroutineType
+	 * @param subroutineName
+	 */
+	private void writeSubroutineVM(KeyWord subroutineType, String subroutineName, String varType) {
+		switch (subroutineType) {
+			case CONSTRUCTOR:// allocate memory for the subroutine
+				int nFields = Math.max(1, TABLE.varCount(Identifier.FIELD)); // OS error to allocate 0 words
+				vmw.writeCall("Memory.alloc", nFields);
+			case METHOD:// set 'this' to point to the object passed as the first Argument
+				vmw.writePush(Segment.ARG, 0);
+				vmw.writePop(Segment.POINTER, 0);
+				break;
+			case FUNCTION:
+				int nLocals = TABLE.varCount(Identifier.VAR);
+				vmw.writeFunction(className + "." + subroutineName, nLocals, varType);
+				break;
+			default:
+				throwException("Unexpected subroutine type " + subroutineType + "!");
+		}
 	}
 
 	/**
@@ -256,51 +259,52 @@ public class CompilationEngine {
 		writeXML("parameterList", false);
 
 		if (tokenizer.tokenType() == TokenType.KEYWORD || tokenizer.tokenType() == TokenType.IDENTIFIER) {
-			// type -> 'int' | 'char' | 'boolean' | className
-			if (tokenizer.tokenType() == TokenType.KEYWORD) {
-				if (tokenizer.keyWord() == KeyWord.INT) writeXML("keyword", "int");
-				if (tokenizer.keyWord() == KeyWord.CHAR) writeXML("keyword", "char");
-				if (tokenizer.keyWord() == KeyWord.BOOLEAN) writeXML("keyword", "boolean");
-			}
-			if (tokenizer.tokenType() == TokenType.IDENTIFIER) {
-				String className = expectIdentifier();
-				writeXML("identifier", className);
-			}
-			tokenizer.advance();
-
-			// varName -> identifier
-			String varName = expectIdentifier();
-			writeXML("identifier", varName);
-			tokenizer.advance();
-
-			// (',' type varName)*
-			while (true) {
-				if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ',') break;
-				writeXML("symbol", ",");
-				tokenizer.advance();
-
-				if (tokenizer.tokenType() == TokenType.KEYWORD) {
-					if (tokenizer.keyWord() == KeyWord.INT) writeXML("keyword", "int");
-					if (tokenizer.keyWord() == KeyWord.CHAR) writeXML("keyword", "char");
-					if (tokenizer.keyWord() == KeyWord.BOOLEAN) writeXML("keyword", "boolean");
-				}
-				if (tokenizer.tokenType() == TokenType.IDENTIFIER) {
-					String classX = expectIdentifier();
-					writeXML("identifier", classX);
-				}
-				tokenizer.advance();
-
-				String varX = expectIdentifier();
-				writeXML("identifier", varX);
-				tokenizer.advance();
-			}
-
+			// (type varName) (',' type varName)*
+			checkForParameters();
 		}
 
 		// </parameterList>
 		writeXML("parameterList", true);
 
 		// DEBUG_PRINT("</parameterList>");
+	}
+
+	/**
+	 * Checks for all parameters in the list.
+	 */
+	private void checkForParameters() {
+		Identifier varKind = Identifier.ARG;
+		String varType = ""; // className
+		while (true) {
+			// type -> 'int' | 'char' | 'boolean' | className
+			varType = checkForType(KeyWord.INT, KeyWord.CHAR, KeyWord.BOOLEAN);
+
+			// varName -> identifier
+			String varName = expectIdentifier();
+			writeXML("identifier", varName);
+			tokenizer.advance();
+
+			TABLE.define(varName, varType, varKind);
+
+			// ','
+			if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ',') break;
+			writeXML("symbol", ",");
+			tokenizer.advance();
+		}
+	}
+
+	/**
+	 * Checks for variable declarations.
+	 */
+	private void checkForVarDecs() {
+		while (true) {
+			if (tokenizer.tokenType() != TokenType.KEYWORD) break;
+			if (tokenizer.keyWord() == KeyWord.VAR) {
+				compileVarDec();
+			} else {
+				break;
+			}
+		}
 	}
 
 	/**
@@ -319,45 +323,66 @@ public class CompilationEngine {
 
 		// 'var'
 		expectKeyWord(KeyWord.VAR);
-		writeXML("keyword", "var");
+		Identifier varKind = Identifier.VAR;
+		writeXML("keyword", tokenizer.keyWordStr());
 		tokenizer.advance();
 
 		// type -> 'int' | 'char' | 'boolean' | className
-		if (tokenizer.tokenType() == TokenType.KEYWORD) {
-			if (tokenizer.keyWord() == KeyWord.INT) writeXML("keyword", "int");
-			if (tokenizer.keyWord() == KeyWord.CHAR) writeXML("keyword", "char");
-			if (tokenizer.keyWord() == KeyWord.BOOLEAN) writeXML("keyword", "boolean");
-		} else {
-			String className = expectIdentifier();
-			writeXML("identifier", className);
-		}
-		tokenizer.advance();
+		String varType = checkForType(KeyWord.INT, KeyWord.CHAR, KeyWord.BOOLEAN);
 
-		// varName -> identifier
-		String varName = expectIdentifier();
-		writeXML("identifier", varName);
-		tokenizer.advance();
-
-		// (',' varName)*
-		while (true) {
-			if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ',') break;
-			writeXML("symbol", ",");
-			tokenizer.advance();
-
-			String varX = expectIdentifier();
-			writeXML("identifier", varX);
-			tokenizer.advance();
-		}
+		// varName (',' varName)* -> identifier
+		checkForVarNames(varKind, varType);
 
 		// ';'
-		expectSymbol(';');
-		writeXML("symbol", ";");
-		tokenizer.advance();
+		expectSemicolon();
 
 		// </varDec>
 		writeXML("varDec", true);
 
 		// DEBUG_PRINT("</varDec>");
+	}
+
+	/**
+	 * Checks for variable's KeyWord or Identifier type and (if applicable) whether the current function is void.
+	 * 
+	 * @return
+	 */
+	private String checkForType(KeyWord... words) {
+		String varType;
+		if (tokenizer.tokenType() == TokenType.KEYWORD) {
+			expectKeyWord(words);
+			varType = tokenizer.keyWordStr();
+			writeXML("keyword", varType);
+
+			if (tokenizer.keyWord() == KeyWord.VOID) isVoid = true;
+		} else {
+			varType = expectIdentifier();
+			writeXML("identifier", varType);
+		}
+		tokenizer.advance();
+		return varType;
+	}
+
+	/**
+	 * Checks for all variable names.
+	 * 
+	 * @param varKind
+	 * @param varType
+	 */
+	private void checkForVarNames(Identifier varKind, String varType) {
+		while (true) {
+			String varName = expectIdentifier();
+			String varScope = TABLE.scopeOf(varName) == null ? "null (object)" : TABLE.scopeOf(varName).toString();
+			TABLE.define(varName, varType, varKind);
+			// writeXML("identifier", varName);
+			writeXML("identifier", "DEFINING in (" + varScope + ") " + varKind + " " + varType + " " + varName + " #"
+					+ TABLE.indexOf(varName));
+			tokenizer.advance();
+
+			if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ',') break;
+			writeXML("symbol", ",");
+			tokenizer.advance();
+		}
 	}
 
 	/**
@@ -374,15 +399,18 @@ public class CompilationEngine {
 
 		while (true) {
 			if (tokenizer.tokenType() != TokenType.KEYWORD) break;
-			if (tokenizer.keyWord() == KeyWord.LET) {
+
+			expectKeyWord(KeyWord.LET, KeyWord.IF, KeyWord.WHILE, KeyWord.DO, KeyWord.RETURN);
+			KeyWord word = tokenizer.keyWord();
+			if (word == KeyWord.LET) {
 				compileLet();
-			} else if (tokenizer.keyWord() == KeyWord.IF) {
+			} else if (word == KeyWord.IF) {
 				compileIf();
-			} else if (tokenizer.keyWord() == KeyWord.WHILE) {
+			} else if (word == KeyWord.WHILE) {
 				compileWhile();
-			} else if (tokenizer.keyWord() == KeyWord.DO) {
+			} else if (word == KeyWord.DO) {
 				compileDo();
-			} else if (tokenizer.keyWord() == KeyWord.RETURN) {
+			} else if (word == KeyWord.RETURN) {
 				compileReturn();
 			}
 		}
@@ -409,9 +437,7 @@ public class CompilationEngine {
 		writeXML("doStatement", false);
 
 		// 'do'
-		expectKeyWord(KeyWord.DO);
-		writeXML("keyword", "do");
-		tokenizer.advance();
+		expectDo();
 
 		// subroutineCall -> subroutineName | (className | varName) -> identifier
 		String name = expectIdentifier();
@@ -419,35 +445,80 @@ public class CompilationEngine {
 		tokenizer.advance();
 
 		// '.' subroutineName
+		boolean isSubroutine = false;
+		String subroutineName = "";
 		if (tokenizer.tokenType() == TokenType.SYMBOL && tokenizer.symbol() == '.') {
+			isSubroutine = true;
+
 			writeXML("symbol", ".");
 			tokenizer.advance();
 
-			String subroutineName = expectIdentifier();
+			subroutineName = expectIdentifier();
 			writeXML("identifier", subroutineName);
 			tokenizer.advance();
+
+			// push THIS
+			// vmw.writePush(Segment.POINTER, 0, Identifier.SUBROUTINE);
 		}
 
 		// '(' expressionList ')'
-		expectSymbol('(');
-		writeXML("symbol", "(");
-		tokenizer.advance();
+		expectOpenParen();
 
-		compileExpressionList();
+		int nArgs = compileExpressionList();
 
-		expectSymbol(')');
-		writeXML("symbol", ")");
-		tokenizer.advance();
+		writeDoVM(name, isSubroutine, subroutineName, nArgs);
 
-		// ';'
-		expectSymbol(';');
-		writeXML("symbol", ";");
-		tokenizer.advance();
+		expectCloseParen();
+
+		// ;
+		expectSemicolon();
 
 		// </do>
 		writeXML("doStatement", true);
 
 		// DEBUG_PRINT("</do>");
+	}
+
+	/**
+	 * Expects the KeyWord Do and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectDo() {
+		expectKeyWord(KeyWord.DO);
+		writeXML("keyword", "do");
+		tokenizer.advance();
+	}
+
+	/**
+	 * Writes the VM for calling Yyy.xx with k + 1 args.
+	 * 
+	 * @param name
+	 * @param isSubroutine
+	 * @param subroutineName
+	 */
+	private void writeDoVM(String name, boolean isSubroutine, String subroutineName, int nArgs) {
+		// write the call to Yyy.xxx with k args
+		writeCallVM(name, isSubroutine, subroutineName, nArgs);
+
+		// pop and ignore the returned value if the method/function is void
+		if (isVoid) {
+			vmw.writePop(Segment.TEMP, 0);
+			isVoid = false;
+		}
+	}
+
+	/**
+	 * Writes the VM call to Yyy.xxx with k args.
+	 * 
+	 * @param name
+	 * @param isSubroutine
+	 * @param subroutineName
+	 * @param nArgs
+	 */
+	private void writeCallVM(String name, boolean isSubroutine, String subroutineName, int nArgs) {
+		if (isSubroutine) {
+			// push Args for the function you are calling
+			vmw.writeCall(name + "." + subroutineName, nArgs);
+		}
 	}
 
 	/**
@@ -463,9 +534,7 @@ public class CompilationEngine {
 		writeXML("letStatement", false);
 
 		// 'let'
-		expectKeyWord(KeyWord.LET);
-		writeXML("keyword", "let");
-		tokenizer.advance();
+		expectLet();
 
 		// varName -> identifier
 		String varName = expectIdentifier();
@@ -473,34 +542,77 @@ public class CompilationEngine {
 		tokenizer.advance();
 
 		// ('[' expression ']')?
+		boolean varArray = false;
 		if (tokenizer.tokenType() == TokenType.SYMBOL && tokenizer.symbol() == '[') {
+			varArray = true;
+
 			writeXML("symbol", "[");
 			tokenizer.advance();
 
 			compileExpression();
 
-			expectSymbol(']');
-			writeXML("symbol", "]");
-			tokenizer.advance();
+			expectCloseBracket();
 		}
 
 		// '='
-		expectSymbol('=');
-		writeXML("symbol", "=");
-		tokenizer.advance();
+		expectEquals();
 
 		// expression
 		compileExpression();
 
-		// ';'
-		expectSymbol(';');
-		writeXML("symbol", ";");
-		tokenizer.advance();
+		// point the virtual 'that' segment via pointer 1, then access the desired array entry via 'that' 0 references
+		writeLetVM(varName, varArray);
+
+		// ;
+		expectSemicolon();
 
 		// </let>
 		writeXML("letStatement", true);
 
 		// DEBUG_PRINT("</let>");
+	}
+
+	/**
+	 * Expects the KeyWord Let, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectLet() {
+		expectKeyWord(KeyWord.LET);
+		writeXML("keyword", tokenizer.keyWordStr());
+		tokenizer.advance();
+	}
+
+	/**
+	 * Writes VM for pointing the virtual 'that' segment via pointer 1, then accessing the desired array entry via 'that' 0 references
+	 * 
+	 * @param varName
+	 * @param varArray
+	 */
+	private void writeLetVM(String varName, boolean varArray) {
+		if (varArray) {
+			vmw.writePop(Segment.TEMP, 0);
+			accessArray(varName);
+			vmw.writePush(Segment.TEMP, 0);
+			vmw.writePop(Segment.THAT, 0);
+		} else {
+			Identifier varKind = TABLE.kindOf(varName);
+			Segment varSeg = TABLE.kindToSegment(varKind);
+			int varIndex = TABLE.indexOf(varName);
+			vmw.writePop(varSeg, varIndex, varKind, varName);
+		}
+	}
+
+	/**
+	 * Point the virtual 'that' segment (using pointer 1) to the address of the desired array entry
+	 * 
+	 * @param varName
+	 */
+	private void accessArray(String varName) {
+		Identifier varKind = TABLE.kindOf(varName);
+		Segment varSeg = TABLE.kindToSegment(varKind);
+		int varIndex = TABLE.indexOf(varName);
+		vmw.writePush(varSeg, varIndex, varKind, varName);
+		vmw.writeArithmetic(Command.ADD);
+		vmw.writePop(Segment.POINTER, 1);
 	}
 
 	/**
@@ -515,36 +627,44 @@ public class CompilationEngine {
 		writeXML("whileStatement", false);
 
 		// 'while'
-		expectKeyWord(KeyWord.WHILE);
-		writeXML("keyword", "while");
-		tokenizer.advance();
+		expectWhile();
+
+		String expressionLabel = uniqueLabel("WHILE_EXP");
+		vmw.writeLabel(expressionLabel);
 
 		// '(' expression ')'
-		expectSymbol('(');
-		writeXML("symbol", "(");
-		tokenizer.advance();
+		expectOpenParen();
 
 		compileExpression();
 
-		expectSymbol(')');
-		writeXML("symbol", ")");
-		tokenizer.advance();
+		String endLabel = uniqueLabel("WHILE_END");
+		vmw.writeIf(endLabel);
+
+		expectCloseParen();
 
 		// '{' statements '}'
-		expectSymbol('{');
-		writeXML("symbol", "{");
-		tokenizer.advance();
+		expectOpenBrace();
 
 		compileStatements();
 
-		expectSymbol('}');
-		writeXML("symbol", "}");
-		tokenizer.advance();
+		expectCloseBrace();
+
+		vmw.writeGoto(expressionLabel);
+		vmw.writeLabel(endLabel);
 
 		// </while>
 		writeXML("whileStatement", true);
 
 		// DEBUG_PRINT("</while>");
+	}
+
+	/**
+	 * Expects the KeyWord While, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectWhile() {
+		expectKeyWord(KeyWord.WHILE);
+		writeXML("keyword", tokenizer.keyWordStr());
+		tokenizer.advance();
 	}
 
 	/**
@@ -559,22 +679,32 @@ public class CompilationEngine {
 		writeXML("returnStatement", false);
 
 		// 'return'
-		expectKeyWord(KeyWord.RETURN);
-		writeXML("keyword", "return");
-		tokenizer.advance();
+		expectReturn();
 
 		// expression?
-		if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ';') compileExpression();
+		if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ';') {
+			compileExpression();
+		} else {
+			vmw.writePush(Segment.CONST, 0);
+		}
 
-		// ';'
-		expectSymbol(';');
-		writeXML("symbol", ";");
-		tokenizer.advance();
+		vmw.writeReturn();
+
+		expectSemicolon();
 
 		// </return>
 		writeXML("returnStatement", true);
 
 		// DEBUG_PRINT("</return>");
+	}
+
+	/**
+	 * Expects the KeyWord Return, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectReturn() {
+		expectKeyWord(KeyWord.RETURN);
+		writeXML("keyword", tokenizer.keyWordStr());
+		tokenizer.advance();
 	}
 
 	/**
@@ -589,53 +719,61 @@ public class CompilationEngine {
 		writeXML("ifStatement", false);
 
 		// 'if'
-		expectKeyWord(KeyWord.IF);
-		writeXML("keyword", "if");
-		tokenizer.advance();
+		expectIf();
 
 		// '(' expression ')'
-		expectSymbol('(');
-		writeXML("symbol", "(");
-		tokenizer.advance();
+		expectOpenParen();
 
 		compileExpression();
 
-		expectSymbol(')');
-		writeXML("symbol", ")");
-		tokenizer.advance();
+		expectCloseParen();
+
+		String trueLabel = uniqueLabel("IF_TRUE");
+		vmw.writeIf(trueLabel);
 
 		// '{' statements '}'
-		expectSymbol('{');
-		writeXML("symbol", "{");
-		tokenizer.advance();
+		expectOpenBrace();
 
 		compileStatements();
 
-		expectSymbol('}');
-		writeXML("symbol", "}");
-		tokenizer.advance();
+		expectCloseBrace();
+
+		String falseLabel = uniqueLabel("IF_FALSE");
+		// vmw.writeGoto(l2);
 
 		// ('else' '{' statements '}')?
 		if (tokenizer.tokenType() == TokenType.KEYWORD && tokenizer.keyWord() == KeyWord.ELSE) {
-			writeXML("keyword", "else");
+			writeXML("keyword", tokenizer.keyWordStr());
 			tokenizer.advance();
 
-			expectSymbol('{');
-			writeXML("symbol", "{");
-			tokenizer.advance();
+			vmw.writeGoto(falseLabel);
+			vmw.writeLabel(trueLabel);
+
+			// '{' statements '}'
+			expectOpenBrace();
 
 			compileStatements();
 
-			expectSymbol('}');
-			writeXML("symbol", "}");
-			tokenizer.advance();
+			vmw.writeLabel(falseLabel);
+
+			expectCloseBrace();
+		} else {
+			vmw.writeLabel(trueLabel);
 		}
 
 		// </if>
 		writeXML("ifStatement", true);
 
 		// DEBUG_PRINT("</if>");
+	}
 
+	/**
+	 * Expects the KeyWord If, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectIf() {
+		expectKeyWord(KeyWord.IF);
+		writeXML("keyword", tokenizer.keyWordStr());
+		tokenizer.advance();
 	}
 
 	/**
@@ -650,24 +788,72 @@ public class CompilationEngine {
 		// <expression>
 		writeXML("expression", false);
 
-		// term
-		compileTerm();
-
-		// (op term)*
-		while (true) {
-			if (tokenizer.tokenType() != TokenType.SYMBOL) break;
-			if (OP_SYMBOLS.indexOf(tokenizer.symbol()) == -1) break;
-			String op = "" + tokenizer.symbol();
-			writeXML("symbol", op);
-			tokenizer.advance();
-
-			compileTerm();
-		}
+		// term (op term)*
+		checkForTerms();
 
 		// </expression>
 		writeXML("expression", true);
 
 		// DEBUG_PRINT("</expression>");
+	}
+
+	/**
+	 * Checks for all terms.
+	 */
+	private void checkForTerms() {
+		char symbol = ' ';
+		boolean op = false;
+		while (true) {
+			compileTerm();
+
+			if (op == true) writeRPN(symbol);
+
+			symbol = tokenizer.symbol();
+			if (tokenizer.tokenType() != TokenType.SYMBOL || OP_SYMBOLS.indexOf(symbol) == -1) break;
+			writeXML("symbol", "" + symbol);
+			tokenizer.advance();
+
+			op = true;
+		}
+	}
+
+	/**
+	 * Writes term (op term)* in Reverse Polish Notation
+	 * 
+	 * @param symbol
+	 */
+	private void writeRPN(char symbol) {
+		switch (symbol) {
+			case '+':
+				vmw.writeArithmetic(Command.ADD);
+				break;
+			case '-':
+				vmw.writeArithmetic(Command.SUB);
+				break;
+			case '*':
+				vmw.writeCall("Math.multiply", 2);
+				break;
+			case '/':
+				vmw.writeCall("Math.divide", 2);
+				break;
+			case '&':
+				vmw.writeArithmetic(Command.AND);
+				break;
+			case '|':
+				vmw.writeArithmetic(Command.OR);
+				break;
+			case '<':
+				vmw.writeArithmetic(Command.LT);
+				break;
+			case '>':
+				vmw.writeArithmetic(Command.GT);
+				break;
+			case '=':
+				// vmw.writeArithmetic(Command.EQ);
+				break;
+			default:
+				throwException("Unexpected symbol " + symbol + "!");
+		}
 	}
 
 	/**
@@ -690,88 +876,31 @@ public class CompilationEngine {
 		writeXML("term", false);
 
 		// keywordConstant -> 'true' | 'false' | 'null' | 'this' -> KEYWORD
-		if (tokenizer.tokenType() == TokenType.KEYWORD
-				&& (tokenizer.keyWord() == KeyWord.TRUE || tokenizer.keyWord() == KeyWord.FALSE
-						|| tokenizer.keyWord() == KeyWord.NULL || tokenizer.keyWord() == KeyWord.THIS)) {
-			if (tokenizer.keyWord() == KeyWord.TRUE) writeXML("keyword", "true");
-			if (tokenizer.keyWord() == KeyWord.FALSE) writeXML("keyword", "false");
-			if (tokenizer.keyWord() == KeyWord.NULL) writeXML("keyword", "null");
-			if (tokenizer.keyWord() == KeyWord.THIS) writeXML("keyword", "this");
-			tokenizer.advance();
+		if (tokenizer.tokenType() == TokenType.KEYWORD) {
+			writeTermKeyWord();
 		}
 
 		// '(' expression ')' | unaryOp term ->
 		// '(' expression ')' | ('-' | '~') term -> SYMBOL
+		char symbol = tokenizer.symbol();
 		if (tokenizer.tokenType() == TokenType.SYMBOL) {
-			if (tokenizer.symbol() == '(') {
-				expectSymbol('(');
-				writeXML("symbol", "(");
-				tokenizer.advance();
-
-				compileExpression();
-
-				expectSymbol(')');
-				writeXML("symbol", ")");
-				tokenizer.advance();
-			} else if (tokenizer.symbol() == '-' || tokenizer.symbol() == '~') {
-				if (tokenizer.symbol() == '-') writeXML("symbol", "-");
-				if (tokenizer.symbol() == '~') writeXML("symbol", "~");
-				tokenizer.advance();
-				compileTerm();
-			}
-
+			writeTermSymbols(symbol);
 		}
+
 		// varName | varName '[' expression ']' | subroutineCall -> IDENTIFIER
 		// subroutineCall: subroutineName '(' expressionList ')' | (className | varname) '.' subroutineName '(' expressionList ')'
 		if (tokenizer.tokenType() == TokenType.IDENTIFIER) {
-			// (className | varname) | subroutineName
-			String name = expectIdentifier();
-			writeXML("identifier", name);
-			tokenizer.advance();
-
-			// NOTHING | '[' expression ']' | '(' expressionList ')' | '.' subroutineName '(' expressionList ')'
-			if (tokenizer.tokenType() == TokenType.SYMBOL) {
-				if (tokenizer.symbol() == '[') {
-					writeXML("symbol", "[");
-					tokenizer.advance();
-
-					compileExpression();
-
-					expectSymbol(']');
-					writeXML("symbol", "]");
-					tokenizer.advance();
-				}
-				if (tokenizer.symbol() == '.') {
-					writeXML("symbol", ".");
-					tokenizer.advance();
-
-					String subroutineName = expectIdentifier();
-					writeXML("identifier", subroutineName);
-					tokenizer.advance();
-				}
-				if (tokenizer.symbol() == '(') {
-					writeXML("symbol", "(");
-					tokenizer.advance();
-
-					compileExpressionList();
-
-					expectSymbol(')');
-					writeXML("symbol", ")");
-					tokenizer.advance();
-				}
-			}
+			writeTermIdentifiers();
 		}
+
 		// integerConstant -> INT_CONST
 		if (tokenizer.tokenType() == TokenType.INT_CONST) {
-			String constant = "" + tokenizer.intVal();
-			writeXML("integerConstant", constant);
-			tokenizer.advance();
+			writeTermIntConst();
 		}
+
 		// stringConstant -> STRING_CONST
 		if (tokenizer.tokenType() == TokenType.STRING_CONST) {
-			String constant = tokenizer.stringVal();
-			writeXML("stringConstant", constant);
-			tokenizer.advance();
+			writeTermStringConst();
 		}
 
 		// </term>
@@ -781,9 +910,146 @@ public class CompilationEngine {
 	}
 
 	/**
+	 * Writes XML and VM for the expected Term String constant.
+	 */
+	private void writeTermStringConst() {
+		String constant = tokenizer.stringVal();
+		writeXML("stringConstant", constant);
+		tokenizer.advance();
+
+		int length = constant.length();
+		vmw.writeCall("String.new", length);
+		// for (int i = 0; i < length; i++) {
+		// vmw.writeCall("String.appendChar", constant.charAt(i));
+		// }
+	}
+
+	/**
+	 * Writes XML and VM for the expected Term Integer constant.
+	 */
+	private void writeTermIntConst() {
+		int constant = tokenizer.intVal();
+		writeXML("integerConstant", "" + constant);
+		tokenizer.advance();
+
+		vmw.writePush(Segment.CONST, constant);
+	}
+
+	/**
+	 * Writes XML and VM for the expected Term Identifiers.
+	 */
+	private void writeTermIdentifiers() {
+		// (className | varname) | subroutineName
+		String name = expectIdentifier();
+		writeXML("identifier", name);
+		tokenizer.advance();
+
+		// NOTHING | '[' expression ']' | '(' expressionList ')' | '.' subroutineName '(' expressionList ')'
+		if (tokenizer.tokenType() == TokenType.SYMBOL) {
+			if (tokenizer.symbol() == '[') {
+				writeXML("symbol", "[");
+				tokenizer.advance();
+
+				compileExpression();
+
+				expectCloseBracket();
+			}
+
+			String subroutineName = "";
+			boolean isSubroutine = false;
+			if (tokenizer.symbol() == '.') {
+				isSubroutine = true;
+				writeXML("symbol", ".");
+				tokenizer.advance();
+
+				subroutineName = expectIdentifier();
+				writeXML("identifier", subroutineName);
+				tokenizer.advance();
+			}
+
+			// '(' expressionList ')'
+			if (tokenizer.symbol() == '(') {
+				writeXML("symbol", "(");
+				tokenizer.advance();
+
+				int nArgs = compileExpressionList();
+
+				writeCallVM(name, isSubroutine, subroutineName, nArgs);
+
+				expectCloseParen();
+			}
+		}
+	}
+
+	/**
+	 * Writes XML and VM for the expected Term Symbols.
+	 * 
+	 * @param symbol
+	 */
+	private void writeTermSymbols(char symbol) {
+		// '(' expressionList ')'
+		if (symbol == '(') {
+			writeXML("symbol", "(");
+			tokenizer.advance();
+
+			compileExpression();
+
+			expectCloseParen();
+		} else if (symbol == '-' || symbol == '~') {
+			writeTermUnaryOps(symbol);
+		}
+	}
+
+	/**
+	 * Writes XML and VM for the expected Term KeyWord.
+	 */
+	private void writeTermKeyWord() {
+		expectKeyWord(KeyWord.TRUE, KeyWord.FALSE, KeyWord.NULL, KeyWord.THIS);
+		KeyWord word = tokenizer.keyWord();
+		writeXML("keyword", tokenizer.keyWordStr());
+		tokenizer.advance();
+
+		switch (word) {
+			case FALSE:
+				vmw.writePush(Segment.CONST, 0);
+				break;
+			case NULL:
+				vmw.writePush(Segment.CONST, 0);
+				break;
+			case THIS:
+				vmw.writePush(Segment.POINTER, 0);
+				break;
+			case TRUE:
+				vmw.writePush(Segment.CONST, 1);
+				vmw.writeArithmetic(Command.NEG);
+				break;
+			default:
+				throwException("Unexpected KeyWord " + word + "!");
+		}
+	}
+
+	/**
+	 * Writes XML and VM for the expected Term unary operators.
+	 * 
+	 * @param symbol
+	 */
+	private void writeTermUnaryOps(char symbol) {
+		writeXML("symbol", "" + symbol);
+		tokenizer.advance();
+
+		compileTerm();
+
+		if (symbol == '-') {
+			vmw.writeArithmetic(Command.NEG);
+		} else {
+			vmw.writeArithmetic(Command.NOT);
+		}
+	}
+
+	/**
 	 * Compiles a (possibly empty) comma-separated list of expressions.
 	 */
-	private void compileExpressionList() {
+	private int compileExpressionList() {
 		// (expression (',' expression)*)?
 
 		// DEBUG_PRINT("<expressionList>");
@@ -791,54 +1057,57 @@ public class CompilationEngine {
 		// <expressionList>
 		writeXML("expressionList", false);
 
+		int nExpressions = 0;
 		if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ')') {
-			// expression
-			compileExpression();
-
-			// (',' expression)*
-			while (true) {
-				if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ',') break;
-				writeXML("symbol", ",");
-				tokenizer.advance();
-
-				compileExpression();
-			}
+			// expression (',' expression)*
+			nExpressions = checkForExpressions();
 		}
 
 		// </expressionList>
 		writeXML("expressionList", true);
 
 		// DEBUG_PRINT("</expressionList>");
+
+		return nExpressions;
 	}
 
 	/**
-	 * Checks to see if the current token is the expected KeyWord
+	 * Checks for all expressions.
+	 */
+	private int checkForExpressions() {
+		int nExpressions = 0;
+		while (true) {
+			compileExpression();
+			nExpressions++;
+
+			if (tokenizer.tokenType() != TokenType.SYMBOL || tokenizer.symbol() != ',') break;
+			writeXML("symbol", ",");
+			tokenizer.advance();
+		}
+		return nExpressions;
+	}
+
+	/**
+	 * Checks to see if the current token matches the expected KeyWord (or one of them)
 	 * 
 	 * @param expected
 	 * @return
 	 */
-	private void expectKeyWord(KeyWord expected) {
+	private void expectKeyWord(KeyWord... expected) {
 		TokenType token = tokenizer.tokenType();
-		KeyWord word = tokenizer.keyWord();
+		KeyWord currentWord = tokenizer.keyWord();
+		boolean matches = false;
 
-		if (token != TokenType.KEYWORD) {
-			try {
-				throw new Exception();
-			} catch (Exception e) {
-				System.out.println("Unexpected token " + token + "!");
-				e.printStackTrace();
-				System.exit(1);
+		if (token != TokenType.KEYWORD) throwException("Unexpected token " + token + "!");
+
+		for (KeyWord expectedWord : expected) {
+			if (currentWord == expectedWord) {
+				matches = true;
+				break;
 			}
 		}
-		if (word != expected) {
-			try {
-				throw new Exception();
-			} catch (Exception e) {
-				System.out.println("Unexpected keyword " + word + "!");
-				e.printStackTrace();
-				System.exit(1);
-			}
-		}
+
+		if (!matches) throwException("Unexpected keyword " + currentWord + "!");
 	}
 
 	/**
@@ -851,24 +1120,71 @@ public class CompilationEngine {
 		TokenType token = tokenizer.tokenType();
 		char symbol = tokenizer.symbol();
 
-		if (token != TokenType.SYMBOL) {
-			try {
-				throw new Exception();
-			} catch (Exception e) {
-				System.out.println("Unexpected token " + token + "!");
-				e.printStackTrace();
-				System.exit(1);
-			}
-		}
-		if (symbol != expected) {
-			try {
-				throw new Exception();
-			} catch (Exception e) {
-				System.out.println("Unexpected symbol " + symbol + "!");
-				e.printStackTrace();
-				System.exit(1);
-			}
-		}
+		if (token != TokenType.SYMBOL) throwException("Unexpected token " + token + "!");
+		if (symbol != expected) throwException("Unexpected symbol " + symbol + "!");
+	}
+
+	/**
+	 * Expects a closed brace and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectCloseBrace() {
+		expectSymbol('}');
+		writeXML("symbol", "}");
+		tokenizer.advance();
+	}
+
+	/**
+	 * Expects an open brace and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectOpenBrace() {
+		expectSymbol('{');
+		writeXML("symbol", "{");
+		tokenizer.advance();
+	}
+
+	/**
+	 * Expects a closed parenthesis and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectCloseParen() {
+		expectSymbol(')');
+		writeXML("symbol", ")");
+		tokenizer.advance();
+	}
+
+	/**
+	 * Expects an open parenthesis and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectOpenParen() {
+		expectSymbol('(');
+		writeXML("symbol", "(");
+		tokenizer.advance();
+	}
+
+	/**
+	 * Expects a semicolon and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectSemicolon() {
+		expectSymbol(';');
+		writeXML("symbol", ";");
+		tokenizer.advance();
+	}
+
+	/**
+	 * Expects an equals and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectEquals() {
+		expectSymbol('=');
+		writeXML("symbol", "=");
+		tokenizer.advance();
+	}
+
+	/**
+	 * Expects a closed bracket and, if found, writes it to XML and advances the tokenizer.
+	 */
+	private void expectCloseBracket() {
+		expectSymbol(']');
+		writeXML("symbol", "]");
+		tokenizer.advance();
 	}
 
 	/**
@@ -880,15 +1196,7 @@ public class CompilationEngine {
 	private String expectIdentifier() {
 		TokenType token = tokenizer.tokenType();
 
-		if (token != TokenType.IDENTIFIER) {
-			try {
-				throw new Exception();
-			} catch (Exception e) {
-				System.out.println("Unexpected token " + token + "!");
-				e.printStackTrace();
-				System.exit(1);
-			}
-		}
+		if (token != TokenType.IDENTIFIER) throwException("Unexpected token " + token + "!");
 		return tokenizer.identifier();
 	}
 
@@ -903,8 +1211,7 @@ public class CompilationEngine {
 		if (value.equals(">")) value = "&gt;";
 		if (value.equals("&")) value = "&amp;";
 
-		String line = getIndentation() + "<" + tag + "> " + value + " </" + tag + ">\n";
-
+		String line = getIndentation() + "<" + tag + "> " + value + " </" + tag + ">";
 		writeLine(line);
 	}
 
@@ -917,8 +1224,7 @@ public class CompilationEngine {
 	private void writeXML(String tag, boolean endTag) {
 		if (endTag) indents--;
 
-		String line = getIndentation() + "<" + (endTag ? "/" : "") + tag + ">\n";
-
+		String line = getIndentation() + "<" + (endTag ? "/" : "") + tag + ">";
 		writeLine(line);
 
 		if (!endTag) indents++;
@@ -944,14 +1250,21 @@ public class CompilationEngine {
 	 */
 	private void writeLine(String line) {
 		try {
-			bw.write(line);
+			bw.write(line + "\n");
 		} catch (IOException ioe) {
 			System.out.println("Couldn't write XML for " + line + "!");
 			ioe.printStackTrace();
 			System.exit(1);
 		}
 
-		// flush();
+		flush();
+	}
+
+	/**
+	 * Prints all key:value pairs for the SymbolTable
+	 */
+	public void printTable() {
+		TABLE.printAll();
 	}
 
 	/**
@@ -970,7 +1283,7 @@ public class CompilationEngine {
 	/**
 	 * Flush the BufferedWriter
 	 */
-	public void flush() {
+	private void flush() {
 		try {
 			bw.flush();
 			;

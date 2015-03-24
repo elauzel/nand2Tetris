@@ -13,13 +13,13 @@ import static utility.Utils.*;
  *
  */
 public class JackAnalyzer {
-	private static final String		INPUT		= "10_input/";
+	private static final String		INPUT		= "cmp_files/";
 	private static final String[]	programs	= { "Main.jack" };
 
 	public static void main(String[] args) {
 		File[] files = getFiles(INPUT, programs, args);
 
-		// For each source Xxx.jack file, create a JackTokenizer from the Xxx.jack input file
+		// For each source Xxx.jack file, create a tokenized Xxx.xml file
 		for (File program : files) {
 			String filePath = getFilePath(program);
 			String folderName = program.getParent();
@@ -27,16 +27,18 @@ public class JackAnalyzer {
 			String fileName = program.getName();
 			System.out.println("fileName:\t" + fileName);
 			String fileNameXML = fileName.replace(".jack", ".xml");
+			String fileNameVM = fileName.replace(".jack", ".vm");
 
 			System.out.println("Tokenizing " + folderName + "\\" + fileName);
 			JackTokenizer jt = new JackTokenizer(filePath + fileName);
 
 			// create an output file called Xxx.xml and prepare it for writing
 			System.out.println("Compiling " + folderName + "\\" + fileNameXML);
-			CompilationEngine ce = new CompilationEngine(filePath + fileNameXML, jt);
+			CompilationEngine ce = new CompilationEngine(filePath + fileNameXML, filePath + fileNameVM, jt);
 
 			// use the CompilationEngine to compile the input JackTokenizer into the output file
 			ce.compileClass();
+			// ce.printTable(); // Debugging
 			ce.close();
 		}
 	}

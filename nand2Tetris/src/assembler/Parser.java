@@ -20,8 +20,7 @@ import static utility.Utils.*;
  *
  */
 public class Parser {
-	private static int	lineNumber;
-	private static int	romAddress;
+	private static int	lineNumber, romAddress;
 
 	/**
 	 * Opens the input file, parses the assembly code, and writes the binary code as follows:<br>

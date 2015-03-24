@@ -11,7 +11,7 @@ import static utility.Utils.*;
  *
  */
 public class VirtualMachine {
-	private static final String		INPUT		= "08_input/";
+	private static final String		INPUT		= "vm_files/";
 	private static final String[]	programs	= { "Sys.vm", "Class1.vm", "Class2.vm" };
 
 	/**
@@ -103,6 +103,7 @@ public class VirtualMachine {
 			cw.flush();
 			System.out.println();
 		}
+		cw.close();
 	}
 
 }

@@ -11,9 +11,9 @@ import static utility.Utils.*;
  *
  */
 public class Assembler {
-	private static final String		INPUT		= "06_input/";
+	private static final String		INPUT		= "asm_files/";
 	private static final String[]	programs	= { "Add.asm", "Max.asm", "MaxL.asm", "Pong.asm", "PongL.asm",
-			"Rect.asm", "RectL.asm",			};
+			"Rect.asm", "RectL.asm"			};
 
 	public static void main(String[] args) {
 		new Code();

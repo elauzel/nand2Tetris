@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-
+import utility.Segment;
 import static utility.Utils.*;
 
 /**
@@ -15,9 +15,8 @@ import static utility.Utils.*;
  *
  */
 public class Parser {
-	private String			currentLine;
-
 	private BufferedReader	br;
+	private String			currentLine;
 
 	/**
 	 * Constructs a new VM parser for the file
@@ -159,32 +158,32 @@ public class Parser {
 	 * @param segment
 	 * @return
 	 */
-	public static SegmentType segmentType(String segment) {
-		SegmentType type = null;
+	public static Segment segmentType(String segment) {
+		Segment type = null;
 		switch (segment) {
 			case "argument":
-				type = SegmentType.S_ARG;
+				type = Segment.ARG;
 				break;
 			case "local":
-				type = SegmentType.S_LCL;
+				type = Segment.LOCAL;
 				break;
 			case "static":
-				type = SegmentType.S_STAT;
+				type = Segment.STATIC;
 				break;
 			case "constant":
-				type = SegmentType.S_CONST;
+				type = Segment.CONST;
 				break;
 			case "this":
-				type = SegmentType.S_THIS;
+				type = Segment.THIS;
 				break;
 			case "that":
-				type = SegmentType.S_THAT;
+				type = Segment.THAT;
 				break;
 			case "pointer":
-				type = SegmentType.S_PTR;
+				type = Segment.POINTER;
 				break;
 			case "temp":
-				type = SegmentType.S_TEMP;
+				type = Segment.TEMP;
 				break;
 			default:
 				throwException("Invalid segment type " + segment);

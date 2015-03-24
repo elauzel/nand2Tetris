@@ -2,7 +2,7 @@ package virtualMachine;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-
+import utility.Segment;
 import static utility.Utils.*;
 
 /**
@@ -13,13 +13,8 @@ import static utility.Utils.*;
  */
 public class CodeWriter {
 	private BufferedWriter	bw;
-
-	private int				serial;
+	private String			inputFileName, currentFunction;
 	private int				breakPoint;
-
-	private String			inputFileName;
-	private String			currentFunction;
-
 	private boolean			returningAgain;
 
 	/**
@@ -116,16 +111,6 @@ public class CodeWriter {
 			default:
 				throwException("Invalid command \"" + command + "\"!");
 		}
-	}
-
-	/**
-	 * Returns a unique label for use in conditional branching
-	 * 
-	 * @param label
-	 * @return
-	 */
-	private String uniqueLabel(String label) {
-		return "$" + label + "_" + serial++;
 	}
 
 	/**
@@ -245,28 +230,28 @@ public class CodeWriter {
 	 */
 	private void writePush(String segment, int index) {
 		switch (Parser.segmentType(segment)) {
-			case S_ARG:
+			case ARG:
 				writeSegToD("ARG", index);
 				break;
-			case S_CONST:
+			case CONST:
 				writeConstToD(index);
 				break;
-			case S_LCL:
+			case LOCAL:
 				writeSegToD("LCL", index);
 				break;
-			case S_PTR:
+			case POINTER:
 				writePointerToD(index);
 				break;
-			case S_STAT:
+			case STATIC:
 				writeStaticToD(index);
 				break;
-			case S_TEMP:
+			case TEMP:
 				writeTempToD(index);
 				break;
-			case S_THAT:
+			case THAT:
 				writeSegToD("THAT", index);
 				break;
-			case S_THIS:
+			case THIS:
 				writeSegToD("THIS", index);
 				break;
 			default:
@@ -285,25 +270,25 @@ public class CodeWriter {
 		writePopStackToD();
 
 		switch (Parser.segmentType(segment)) {
-			case S_ARG:
+			case ARG:
 				writeDToSeg("ARG", index);
 				break;
-			case S_LCL:
+			case LOCAL:
 				writeDToSeg("LCL", index);
 				break;
-			case S_PTR:
+			case POINTER:
 				writeDToPointer(index);
 				break;
-			case S_STAT:
+			case STATIC:
 				writeDToStatic(index);
 				break;
-			case S_TEMP:
+			case TEMP:
 				writeDToTemp(index);
 				break;
-			case S_THAT:
+			case THAT:
 				writeDToSeg("THAT", index);
 				break;
-			case S_THIS:
+			case THIS:
 				writeDToSeg("THIS", index);
 				break;
 			default:
@@ -739,7 +724,7 @@ public class CodeWriter {
 	 * @param label
 	 * @return
 	 */
-	public String localFunction(String label) {
+	private String localFunction(String label) {
 		return currentFunction + "$" + label;
 	}
 

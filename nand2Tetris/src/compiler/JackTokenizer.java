@@ -21,13 +21,9 @@ public class JackTokenizer {
 	private static HashMap<String, TokenType>		tokenTypes1;
 	private static HashMap<Character, TokenType>	tokenTypes2;
 
-	private String									currentLine, currentToken;
-
-	private boolean									commentJavaDoc;
-	private boolean									partOfString;
-
 	private BufferedReader							br;
-
+	private String									currentLine, currentToken;
+	private boolean									commentJavaDoc, partOfString;
 	private int										numLines;
 
 	/**
@@ -132,7 +128,7 @@ public class JackTokenizer {
 	 *
 	 * @return
 	 */
-	public boolean hasMoreTokens() {
+	private boolean hasMoreTokens() {
 		return !currentLine.isEmpty();
 	}
 
@@ -264,6 +260,83 @@ public class JackTokenizer {
 		if (word == null) throwException("Invalid keyword type " + currentToken);
 
 		return word;
+	}
+
+	/**
+	 * Returns the String representation of the current KeyWord.
+	 * 
+	 * @return
+	 */
+	public String keyWordStr() {
+		String keyString = null;
+		switch (keyWord()) {
+			case BOOLEAN:
+				keyString = "boolean";
+				break;
+			case CHAR:
+				keyString = "char";
+				break;
+			case CLASS:
+				keyString = "class";
+				break;
+			case CONSTRUCTOR:
+				keyString = "constructor";
+				break;
+			case DO:
+				keyString = "do";
+				break;
+			case ELSE:
+				keyString = "else";
+				break;
+			case FALSE:
+				keyString = "false";
+				break;
+			case FIELD:
+				keyString = "field";
+				break;
+			case FUNCTION:
+				keyString = "function";
+				break;
+			case IF:
+				keyString = "if";
+				break;
+			case INT:
+				keyString = "int";
+				break;
+			case LET:
+				keyString = "let";
+				break;
+			case METHOD:
+				keyString = "method";
+				break;
+			case NULL:
+				keyString = "null";
+				break;
+			case RETURN:
+				keyString = "return";
+				break;
+			case STATIC:
+				keyString = "static";
+				break;
+			case THIS:
+				keyString = "this";
+				break;
+			case TRUE:
+				keyString = "true";
+				break;
+			case VAR:
+				keyString = "var";
+				break;
+			case VOID:
+				keyString = "void";
+				break;
+			case WHILE:
+				keyString = "while";
+				break;
+			default:
+				break;
+		}
+		return keyString;
 	}
 
 	/**

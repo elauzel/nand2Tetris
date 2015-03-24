@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class Utils {
+	private static int	serial;
 
 	/**
 	 * Used for printing debug messages
@@ -85,6 +86,16 @@ public class Utils {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+
+	/**
+	 * Returns a unique label for use in conditional branching
+	 * 
+	 * @param label
+	 * @return
+	 */
+	public static String uniqueLabel(String label) {
+		return "$" + label + "_" + serial++;
 	}
 
 	/**
