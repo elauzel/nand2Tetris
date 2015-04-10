@@ -1,0 +1,38 @@
+function Main.main 2
+push constant 256
+pop static 0
+push constant 512
+pop static 1
+call Util.init 0
+pop temp 0
+push static 1
+push static 0
+call SplashScreen.start 2
+pop temp 0
+call SplashScreen.getSeed 0
+call LCGRandom.setSeed 1
+pop temp 0
+push constant 0
+not
+pop local 0
+label WHILE_EXP0
+push local 0
+not
+if-goto WHILE_END0
+push static 1
+push static 0
+call HiLoGame.new 2
+pop local 1
+push local 1
+call HiLoGame.run 1
+pop temp 0
+push local 1
+call HiLoGame.confirmAgain 1
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push local 1
+call HiLoGame.dispose 1
+pop temp 0
+push constant 0
+return

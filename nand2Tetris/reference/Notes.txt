@@ -1,0 +1,93 @@
+Note that because of the implicit "this" argument, the argument numbers
+are off by one!  The easiest way to handle this to have
+compileSubroutine when it's compiling a method add an argument "this" to
+the symbol table before compiling the argument list.  (Since "this" is a
+keyword, you should never be looking it up as an identifier in the
+symbol table.  You can guarantee that you won't ever accidentally find
+it by using an illegal symbol name like "~this~".)
+
+Things I'm still trying to figure out:
+
+1)	======================================
+
+How to properly push arguments onto the stack before writing calls
+
+>	private void writeCallVM(String name, boolean isSubroutine, String subroutineName, int nArgs) {
+>		if (isSubroutine) {
+>			// push Args for the function you are calling
+>			vmw.writeCall(name + "." + subroutineName, nArgs);
+>		}
+>	}
+
+call Main.fillMemory 3
+
+push constant 8000
+call Memory.peek 1 // let value = Memory.peek(8000);
+
+push local 1
+call Main.convert 1 // do Main.convert(value);
+
+push local 0
+call Main.nextMask 1 // let mask = Main.nextMask(mask);
+
+push local 0
+call Memory.poke 2 // do Memory.poke(9000 + position, mask);
+
+push constant 1
+call Memory.poke 2 // do Memory.poke(8000 + position, 1);
+
+push constant 0
+call Memory.poke 2 // do Memory.poke(8000 + position, 0);
+
+push argument 0
+push constant 2
+call Math.multiply 2 // return mask * 2;
+
+push argument 0
+push argument 2
+call Memory.poke 2 // do Memory.poke(startAddress, value);
+
+-----
+
+You shouldn't need to do anything specific to push arguments.  When compileExpressionList() is called, the code it writes will leave the expressions on the stack.  E.g. "1+2,3-4" will compile to
+    push constant 1
+    push constant 2
+    add
+    push constant 3
+    push constant 4
+    sub
+which leaves two values on the stack.
+
+The only explicit push you will need to write is for calls to methods. Then you will need to push the this pointer before calling compileExpressionList().
+
+2)	======================================
+
+How to properly write the VM for a String Constant by writing a call to String.appendChar() for each character of a string
+
+>	private void writeTermStringConst() {
+>		String constant = tokenizer.stringVal();
+>		writeXML("stringConstant", constant);
+>		tokenizer.advance();
+>
+>		int length = constant.length();
+>		vmw.writeCall("String.new", length);
+>		// for (int i = 0; i < length; i++) {
+>		// vmw.writeCall("String.appendChar", constant.charAt(i));
+>		// }
+>	}
+
+vmw.writeCall("String.new", length);
+
+The argument to the call VM command is the number of arguments to String.new(), not the argument itself.  The argument needs to be on the stack.  Ditto for
+
+    vmw.writeCall("String.appendChar", constant.charAt(i));
+
+
+Use JackCompiler to see what it generates for
+    function void test() {
+        var String s;
+        let s = "test";
+        return;
+    }
+
+It is not an error that the generated VM code looks like it is only supplying one argument to method String.appendChar which requires two arguments -- this and the char to append.  Look the the definition of String.appendChar() to understand how this code works.

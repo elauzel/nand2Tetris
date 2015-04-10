@@ -1,0 +1,523 @@
+             	//function Sys.init 0     
+    0 32000  @32000// sync
+    1        (Sys.init)
+             	//push constant 4000      
+    1 32001  @32001// sync
+    2  4000  @4000
+    3  EC10  D=A
+    4     0  @SP
+    5  FDE8  AM=M+1
+    6  ECA0  A=A-1
+    7  E308  M=D
+             	//pop pointer 0           
+    8 32002  @32002// sync
+    9     0  @SP
+   10  FCA8  AM=M-1
+   11  FC10  D=M
+   12     3  @THIS
+   13  E308  M=D
+             	//push constant 5000      
+   14 32003  @32003// sync
+   15  5000  @5000
+   16  EC10  D=A
+   17     0  @SP
+   18  FDE8  AM=M+1
+   19  ECA0  A=A-1
+   20  E308  M=D
+             	//pop pointer 1           
+   21 32004  @32004// sync
+   22     0  @SP
+   23  FCA8  AM=M-1
+   24  FC10  D=M
+   25     4  @THAT
+   26  E308  M=D
+             	//call Sys.main 0         
+   27 32005  @32005// sync
+   28    72  @$:return_0
+   29  FC10  D=M
+   30     0  @SP
+   31  FDE8  AM=M+1
+   32  ECA0  A=A-1
+   33  E308  M=D
+   34     1  @LCL
+   35  FC10  D=M
+   36     0  @SP
+   37  FDE8  AM=M+1
+   38  ECA0  A=A-1
+   39  E308  M=D
+   40     2  @ARG
+   41  FC10  D=M
+   42     0  @SP
+   43  FDE8  AM=M+1
+   44  ECA0  A=A-1
+   45  E308  M=D
+   46     3  @THIS
+   47  FC10  D=M
+   48     0  @SP
+   49  FDE8  AM=M+1
+   50  ECA0  A=A-1
+   51  E308  M=D
+   52     4  @THAT
+   53  FC10  D=M
+   54     0  @SP
+   55  FDE8  AM=M+1
+   56  ECA0  A=A-1
+   57  E308  M=D
+   58     0  @SP
+   59  FC10  D=M
+   60     0  @0
+   61  E4D0  D=D-A
+   62     5  @5
+   63  E4D0  D=D-A
+   64     2  @ARG
+   65  E308  M=D
+   66     0  @SP
+   67  FC10  D=M
+   68     1  @LCL
+   69  E308  M=D
+   70    83  @Sys.main
+   71  EA87  0;JMP
+   72        ($:return_0)
+             	//pop temp 1              
+   72 32006  @32006// sync
+   73     0  @SP
+   74  FCA8  AM=M-1
+   75  FC10  D=M
+   76     6  @6
+   77  E308  M=D
+             	//label LOOP              
+   78 32007  @32007// sync
+   79        (LOOP)
+             	//goto LOOP               
+   79 32008  @32008// sync
+   80    79  @LOOP
+   81  EA87  0;JMP
+             	//function Sys.main 5     
+   82 32009  @32009// sync
+   83        (Sys.main)
+   83     0  @0
+   84  EC10  D=A
+   85     0  @SP
+   86  FDE8  AM=M+1
+   87  ECA0  A=A-1
+   88  E308  M=D
+   89     0  @0
+   90  EC10  D=A
+   91     0  @SP
+   92  FDE8  AM=M+1
+   93  ECA0  A=A-1
+   94  E308  M=D
+   95     0  @0
+   96  EC10  D=A
+   97     0  @SP
+   98  FDE8  AM=M+1
+   99  ECA0  A=A-1
+  100  E308  M=D
+  101     0  @0
+  102  EC10  D=A
+  103     0  @SP
+  104  FDE8  AM=M+1
+  105  ECA0  A=A-1
+  106  E308  M=D
+  107     0  @0
+  108  EC10  D=A
+  109     0  @SP
+  110  FDE8  AM=M+1
+  111  ECA0  A=A-1
+  112  E308  M=D
+             	//push constant 4001      
+  113 32010  @32010// sync
+  114  4001  @4001
+  115  EC10  D=A
+  116     0  @SP
+  117  FDE8  AM=M+1
+  118  ECA0  A=A-1
+  119  E308  M=D
+             	//pop pointer 0           
+  120 32011  @32011// sync
+  121     0  @SP
+  122  FCA8  AM=M-1
+  123  FC10  D=M
+  124     3  @THIS
+  125  E308  M=D
+             	//push constant 5001      
+  126 32012  @32012// sync
+  127  5001  @5001
+  128  EC10  D=A
+  129     0  @SP
+  130  FDE8  AM=M+1
+  131  ECA0  A=A-1
+  132  E308  M=D
+             	//pop pointer 1           
+  133 32013  @32013// sync
+  134     0  @SP
+  135  FCA8  AM=M-1
+  136  FC10  D=M
+  137     4  @THAT
+  138  E308  M=D
+             	//push constant 200       
+  139 32014  @32014// sync
+  140   200  @200
+  141  EC10  D=A
+  142     0  @SP
+  143  FDE8  AM=M+1
+  144  ECA0  A=A-1
+  145  E308  M=D
+             	//pop local 1             
+  146 32015  @32015// sync
+  147     0  @SP
+  148  FCA8  AM=M-1
+  149  FC10  D=M
+  150    13  @R13
+  151  E308  M=D
+  152     1  @LCL
+  153  FC10  D=M
+  154     1  @1
+  155  E090  D=D+A
+  156    14  @R14
+  157  E308  M=D
+  158    13  @R13
+  159  FC10  D=M
+  160    14  @R14
+  161  FC20  A=M
+  162  E308  M=D
+             	//push constant 40        
+  163 32016  @32016// sync
+  164    40  @40
+  165  EC10  D=A
+  166     0  @SP
+  167  FDE8  AM=M+1
+  168  ECA0  A=A-1
+  169  E308  M=D
+             	//pop local 2             
+  170 32017  @32017// sync
+  171     0  @SP
+  172  FCA8  AM=M-1
+  173  FC10  D=M
+  174    13  @R13
+  175  E308  M=D
+  176     1  @LCL
+  177  FC10  D=M
+  178     2  @2
+  179  E090  D=D+A
+  180    14  @R14
+  181  E308  M=D
+  182    13  @R13
+  183  FC10  D=M
+  184    14  @R14
+  185  FC20  A=M
+  186  E308  M=D
+             	//push constant 6         
+  187 32018  @32018// sync
+  188     6  @6
+  189  EC10  D=A
+  190     0  @SP
+  191  FDE8  AM=M+1
+  192  ECA0  A=A-1
+  193  E308  M=D
+             	//pop local 3             
+  194 32019  @32019// sync
+  195     0  @SP
+  196  FCA8  AM=M-1
+  197  FC10  D=M
+  198    13  @R13
+  199  E308  M=D
+  200     1  @LCL
+  201  FC10  D=M
+  202     3  @3
+  203  E090  D=D+A
+  204    14  @R14
+  205  E308  M=D
+  206    13  @R13
+  207  FC10  D=M
+  208    14  @R14
+  209  FC20  A=M
+  210  E308  M=D
+             	//push constant 123       
+  211 32020  @32020// sync
+  212   123  @123
+  213  EC10  D=A
+  214     0  @SP
+  215  FDE8  AM=M+1
+  216  ECA0  A=A-1
+  217  E308  M=D
+             	//call Sys.add12 1        
+  218 32021  @32021// sync
+  219   263  @$:return_1
+  220  FC10  D=M
+  221     0  @SP
+  222  FDE8  AM=M+1
+  223  ECA0  A=A-1
+  224  E308  M=D
+  225     1  @LCL
+  226  FC10  D=M
+  227     0  @SP
+  228  FDE8  AM=M+1
+  229  ECA0  A=A-1
+  230  E308  M=D
+  231     2  @ARG
+  232  FC10  D=M
+  233     0  @SP
+  234  FDE8  AM=M+1
+  235  ECA0  A=A-1
+  236  E308  M=D
+  237     3  @THIS
+  238  FC10  D=M
+  239     0  @SP
+  240  FDE8  AM=M+1
+  241  ECA0  A=A-1
+  242  E308  M=D
+  243     4  @THAT
+  244  FC10  D=M
+  245     0  @SP
+  246  FDE8  AM=M+1
+  247  ECA0  A=A-1
+  248  E308  M=D
+  249     0  @SP
+  250  FC10  D=M
+  251     1  @1
+  252  E4D0  D=D-A
+  253     5  @5
+  254  E4D0  D=D-A
+  255     2  @ARG
+  256  E308  M=D
+  257     0  @SP
+  258  FC10  D=M
+  259     1  @LCL
+  260  E308  M=D
+  261   397  @Sys.add12
+  262  EA87  0;JMP
+  263        ($:return_1)
+             	//pop temp 0              
+  263 32022  @32022// sync
+  264     0  @SP
+  265  FCA8  AM=M-1
+  266  FC10  D=M
+  267     5  @5
+  268  E308  M=D
+             	//push local 0            
+  269 32023  @32023// sync
+  270     1  @LCL
+  271  FC10  D=M
+  272     0  @0
+  273  E0A0  A=D+A
+  274  FC10  D=M
+  275     0  @SP
+  276  FDE8  AM=M+1
+  277  ECA0  A=A-1
+  278  E308  M=D
+             	//push local 1            
+  279 32024  @32024// sync
+  280     1  @LCL
+  281  FC10  D=M
+  282     1  @1
+  283  E0A0  A=D+A
+  284  FC10  D=M
+  285     0  @SP
+  286  FDE8  AM=M+1
+  287  ECA0  A=A-1
+  288  E308  M=D
+             	//push local 2            
+  289 32025  @32025// sync
+  290     1  @LCL
+  291  FC10  D=M
+  292     2  @2
+  293  E0A0  A=D+A
+  294  FC10  D=M
+  295     0  @SP
+  296  FDE8  AM=M+1
+  297  ECA0  A=A-1
+  298  E308  M=D
+             	//push local 3            
+  299 32026  @32026// sync
+  300     1  @LCL
+  301  FC10  D=M
+  302     3  @3
+  303  E0A0  A=D+A
+  304  FC10  D=M
+  305     0  @SP
+  306  FDE8  AM=M+1
+  307  ECA0  A=A-1
+  308  E308  M=D
+             	//push local 4            
+  309 32027  @32027// sync
+  310     1  @LCL
+  311  FC10  D=M
+  312     4  @4
+  313  E0A0  A=D+A
+  314  FC10  D=M
+  315     0  @SP
+  316  FDE8  AM=M+1
+  317  ECA0  A=A-1
+  318  E308  M=D
+             	//add                     
+  319 32028  @32028// sync
+  320     0  @SP
+  321  FCA8  AM=M-1
+  322  FC10  D=M
+  323  ECA0  A=A-1
+  324  F088  M=M+D
+             	//add                     
+  325 32029  @32029// sync
+  326     0  @SP
+  327  FCA8  AM=M-1
+  328  FC10  D=M
+  329  ECA0  A=A-1
+  330  F088  M=M+D
+             	//add                     
+  331 32030  @32030// sync
+  332     0  @SP
+  333  FCA8  AM=M-1
+  334  FC10  D=M
+  335  ECA0  A=A-1
+  336  F088  M=M+D
+             	//add                     
+  337 32031  @32031// sync
+  338     0  @SP
+  339  FCA8  AM=M-1
+  340  FC10  D=M
+  341  ECA0  A=A-1
+  342  F088  M=M+D
+             	//return                  
+  343 32032  @32032// sync
+  344        ($:RETURN_)
+  344     1  @LCL
+  345  FC10  D=M
+  346    13  @R13
+  347  E308  M=D
+  348  FC10  D=M
+  349     5  @5
+  350  E4E0  A=D-A
+  351  FC10  D=M
+  352    14  @R14
+  353  E308  M=D
+  354     0  @SP
+  355  FCA8  AM=M-1
+  356  FC10  D=M
+  357     2  @ARG
+  358  FC20  A=M
+  359  E308  M=D
+  360     2  @ARG
+  361  FC10  D=M
+  362     1  @1
+  363  E090  D=D+A
+  364     0  @SP
+  365  E308  M=D
+  366    13  @R13
+  367  FC10  D=M
+  368     1  @1
+  369  E4E0  A=D-A
+  370  FC10  D=M
+  371     4  @THAT
+  372  E308  M=D
+  373    13  @R13
+  374  FC10  D=M
+  375     2  @2
+  376  E4E0  A=D-A
+  377  FC10  D=M
+  378     3  @THIS
+  379  E308  M=D
+  380    13  @R13
+  381  FC10  D=M
+  382     3  @3
+  383  E4E0  A=D-A
+  384  FC10  D=M
+  385     2  @ARG
+  386  E308  M=D
+  387    13  @R13
+  388  FC10  D=M
+  389     4  @4
+  390  E4E0  A=D-A
+  391  FC10  D=M
+  392     1  @LCL
+  393  E308  M=D
+  394    14  @R14
+  395  EA87  0;JMP
+             	//function Sys.add12 0    
+  396 32033  @32033// sync
+  397        (Sys.add12)
+             	//push constant 4002      
+  397 32034  @32034// sync
+  398  4002  @4002
+  399  EC10  D=A
+  400     0  @SP
+  401  FDE8  AM=M+1
+  402  ECA0  A=A-1
+  403  E308  M=D
+             	//pop pointer 0           
+  404 32035  @32035// sync
+  405     0  @SP
+  406  FCA8  AM=M-1
+  407  FC10  D=M
+  408     3  @THIS
+  409  E308  M=D
+             	//push constant 5002      
+  410 32036  @32036// sync
+  411  5002  @5002
+  412  EC10  D=A
+  413     0  @SP
+  414  FDE8  AM=M+1
+  415  ECA0  A=A-1
+  416  E308  M=D
+             	//pop pointer 1           
+  417 32037  @32037// sync
+  418     0  @SP
+  419  FCA8  AM=M-1
+  420  FC10  D=M
+  421     4  @THAT
+  422  E308  M=D
+             	//push argument 0         
+  423 32038  @32038// sync
+  424     2  @ARG
+  425  FC10  D=M
+  426     0  @0
+  427  E0A0  A=D+A
+  428  FC10  D=M
+  429     0  @SP
+  430  FDE8  AM=M+1
+  431  ECA0  A=A-1
+  432  E308  M=D
+             	//push constant 12        
+  433 32039  @32039// sync
+  434    12  @12
+  435  EC10  D=A
+  436     0  @SP
+  437  FDE8  AM=M+1
+  438  ECA0  A=A-1
+  439  E308  M=D
+             	//add                     
+  440 32040  @32040// sync
+  441     0  @SP
+  442  FCA8  AM=M-1
+  443  FC10  D=M
+  444  ECA0  A=A-1
+  445  F088  M=M+D
+             	//return                  
+  446 32041  @32041// sync
+  447   344  @$:RETURN_
+  448  EA87  0;JMP
+             0;JMP
+
+Data Symbols
+
+24576 D  KBD
+16384 D  SCREEN
+
+Code Symbols
+
+  344 C  $:RETURN_
+              447
+   72 C  $:return_0
+               28
+  263 C  $:return_1
+              219
+   79 C  LOOP
+               80
+  397 C  Sys.add12
+              261
+    1 C  Sys.init
+   83 C  Sys.main
+               70
+
+Code size =   449 (0x01C1)
+Data size =    16 (0x0010)

@@ -1,0 +1,119 @@
+/**
+ * Implements a graphic arrow. A graphic arrow has a screen location and a size. 
+ * It also has methods for drawing, erasing, and moving on the screen.
+ */
+class Arrow {
+    static int screenRows;   // rows in the screen (constant of 256)
+    static int screenColumns;    // columns in the screen (constant of 512)
+    static int wEighth, wSixteenth;
+    
+    field boolean debugging;
+    field int borderThickness;    // thickness of drawn borders
+    field int currentX, currentY, width, height;
+    field int leftX, leftY, topX, topY, rightX, rightY, bottomX, bottomY;
+
+    /** Constructs a new arrow with a given location and size. */
+    constructor Arrow new(int initialX, int initialY) {
+        let debugging = false;
+
+        if (debugging) {
+            do Util.printDebug("-> Arr.new()!", 0);
+        }
+
+        let screenRows = 256;
+        let screenColumns = 512;
+        let wEighth = screenColumns / 8;
+        let wSixteenth = screenColumns / 16;
+
+        let borderThickness = 10;
+        
+        do setLocation(initialX, initialY);
+        do draw();
+
+        return this;
+    }
+
+    /** Sets the arrow's location. */
+    method void setLocation(int startX, int startY) {
+        if (debugging) {
+            do Util.printDebug("-> Arr.setLocation()!", 0);
+        }
+
+        let currentX = startX;
+        let currentY = startY;
+
+        let width = screenColumns / 16;
+        let height = screenRows / 5;
+        let leftX = currentX;
+        let leftY = currentY + (height / 2);
+        let topX = currentX + (width / 2);
+        let topY = currentY;
+        let rightX = currentX + width;
+        let rightY = leftY;
+        let bottomX = topX;
+        let bottomY = currentY + height;
+
+        return;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        if (debugging) {
+            do Util.printDebug("-> Arr.dispose()!", 0);
+        }
+
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draws the arrow on the screen. */
+    method void draw() {
+        if (debugging) {
+            do Util.printDebug("-> Arr.draw()!", 0);
+        }
+
+        do Screen.setColor(true);
+        do Screen.drawLine(leftX, leftY, topX, topY);
+        do Screen.drawLine(rightX, rightY, topX, topY);
+        do Screen.drawLine(leftX, leftY, rightX, rightY);
+        do Screen.drawLine(bottomX, bottomY, topX, topY);
+
+        return;
+    }
+
+    /** Erases the arrow from the screen. */
+    method void erase() {
+        if (debugging) {
+            do Util.printDebug("-> Arr.erase()!", 0);
+        }
+
+        do Screen.setColor(false);
+        do Screen.drawRectangle(currentX, currentY, currentX + width, currentY + height);
+        do Screen.setColor(true);
+
+        return;
+    }
+
+    /** moves the arrow left and right. */
+    method void move(boolean left) {
+        var int cardWidth, cardGap;
+
+        if (debugging) {
+            do Util.printDebug("-> Arr.move()!", 0);
+        }
+
+        let cardWidth = wEighth + (wSixteenth / 2);
+        let cardGap = borderThickness * 3;
+
+        do erase();
+        
+        if (left) {
+            do setLocation(currentX - (cardWidth + cardGap), currentY);
+        } else {
+            do setLocation(currentX + cardWidth + cardGap, currentY);
+        }
+        do draw();
+
+        return;
+    }
+}

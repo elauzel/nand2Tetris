@@ -1,0 +1,495 @@
+/**
+ * Implements the High-Low game, a variant on the Numbers Guessing mini-game 
+ * from the Playstation game Breath of Fire III. You begin each game wagering up * to 500 <currency> and trying to guess a randomly-selected number between 123 
+ * and 987 in as few guesses as possible. The number has three digits, each 
+ * ranging from 1-9, with no digit used more than once. Each time you guess, 
+ * you're told how many digits are correct and in the correct sequence (called 
+ * at "Hit") and how many digits are correct, but out of sequence (called a 
+ * "Blow"). By guessing the correct number within 8 attempts, you win a cash 
+ * prize, receiving better prizes for fewer guesses (with the lowest amount 
+ * being your own wager).
+ * 
+ * The 'left' and 'right' keys are used move between numbers in your current 
+ * guess. The 'up' and 'down' keys are used to increment or decrement the 
+ * current digit. The 'g' key is used to make a guess. The 'q' key is used to 
+ * quit the game.
+ */
+class HiLoGame {
+    static int screenWidth, screenHeight;
+    static int hThirtySecond, hSixteenth, hEighth, hFourth, hHalf;
+    static int wThirtySecond, wSixteenth, wEighth, wFourth, wHalf;
+    static boolean debugging;
+
+    field int borderThickness;    // thickness of drawn borders
+    field Arrow arrow;  // the arrow that appears under the current guess digit
+    field Array guess;  // Array of length 3 to hold the current guess
+    field int guesses;  // the number of guesses for the current number
+    field int number;   // the PRNG secret number the player must guess
+    field int digit;    // active digit of the current guess, either 0 1 or 2
+    field int cardWidth, cardGap;    // the width of each card and its spacing
+    field boolean endGame, endAll;  // whether to end the game or not
+
+    /** Constructs a new High-Low Game. */
+    constructor HiLoGame new(int width, int height) {
+        // var String sNum;
+
+        let debugging = false;
+        let endAll = false;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.new()!", 0);
+        }
+
+        // initialize screen constants and ratios
+        let screenHeight = height;
+        let screenWidth = width;
+
+        let hThirtySecond = screenHeight / 32;
+        let hSixteenth = screenHeight / 16;
+        let hEighth = screenHeight / 8;
+        let hFourth = screenHeight / 4;
+        let hHalf = screenHeight / 2;
+        let wThirtySecond = screenWidth / 32;
+        let wSixteenth = screenWidth / 16;
+        let wEighth = screenWidth / 8;
+        let wFourth = screenWidth / 4;
+        let wHalf = screenWidth / 2;
+
+        // initialize card and frame borders
+        let borderThickness = 9;        
+        let cardGap = borderThickness * 3;
+        let cardWidth = wEighth + wThirtySecond;
+
+        // get the PRNG number
+        do randomNumber();
+        
+        // print out a String representation of the PRNG number
+        // let sNum = String.new(3);
+        // do sNum.setInt(number);
+        // do Util.println(Util.concat("Number: ", sNum, true), hSixteenth, wThirtySecond * 11 / 8);
+
+        // create the arrow
+        let arrow = Arrow.new(wFourth - wThirtySecond + (cardWidth * 7 / 6), hHalf + hFourth);
+
+        // create the guess array
+        let guess = Array.new(3);
+        let guesses = 0;
+        let guess[0] = 1;
+        let guess[1] = 2;
+        let guess[2] = 3;
+
+        // initialize loop variables
+        let digit = 3;
+        let endGame = false;
+
+        return this;
+    }
+
+    /** Picks a valid random number for the player to guess. */
+    method void randomNumber() {
+        var String sNum;
+        var int one, two, three;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.randomNumber()!", 0);
+        }
+
+        let number = LCGRandom.randRange(123,987);
+
+        // make sure no digits repeat
+        let sNum = String.new(3);   // String representation of the number
+        do sNum.setInt(number); // String representation of the number
+        
+        let one = sNum.charAt(0);
+        let two = sNum.charAt(1);
+        let three = sNum.charAt(2);
+
+        // if they do repeat, try again
+        if ((one = two) | (two = three) | (one = three)) {
+            do randomNumber();
+        }
+
+        do sNum.dispose();
+
+        return;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        if (debugging) {
+            do Util.printDebug("-> HLG.dispose()!", 0);
+        }
+
+        do arrow.dispose();
+        do guess.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Starts the game. Handles input from the user that moves the arrow. */
+    method void run() {
+        var char key;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.run()!", 0);
+        }
+
+        do drawFrame(); // draws the background game graphics
+        do drawCards(); // draws the card borders
+
+        while (digit > 0) {
+            let digit = digit - 1;
+            do drawNumbers();   // draws the numbers in the cards
+        }
+
+        // capture keyboard input
+        while (~endGame) {
+            // waits for a key to be pressed.
+            while (key = 0) {
+                let key = Keyboard.keyPressed();
+            }
+            if (key = 130) {    // left
+                do selectAndMove(true); // select digit/card to the left
+            }
+            if (key = 132) {    // right
+                do selectAndMove(false);    // select digit/card to the right
+            }
+            if (key = 131) {    // up
+                do changeDigit(true);   // increment the number
+                do drawNumbers();   // redraw
+            }
+            if (key = 133) {    // down
+                do changeDigit(false);  // decrement the number
+                do drawNumbers();   // redraw
+            }
+            if (key = 71) {    // G
+                do evaluate();
+            }
+            if (key = 140) {    // escape
+                let endGame = true;
+                let endAll = true;
+            }
+            if (key = 81) {    // Q
+                let endGame = true;
+                let endAll = true;
+            }
+
+            // waits for the key to be released.
+            while (~(key = 0)) {
+                let key = Keyboard.keyPressed();
+            }
+        }
+            
+        return;
+	}
+
+    /** Increments or decrements the active digit value in the current guess. */
+    method void changeDigit(boolean increment) {
+        var int value;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.changeDigit()!", 0);
+        }
+
+        let value = guess[digit];
+        if (increment) {
+            if (value = 9) { // if we need to wrap around
+                let guess[digit] = 1;
+            } else {
+                let guess[digit] = value + 1;
+            }
+        } else { // you are decreasing the active digit
+            if (value = 1) { // if we need to wrap around
+                let guess[digit] = 9;
+            } else {
+                let guess[digit] = value - 1;
+            }
+        }
+
+        return;
+    }
+
+    /** Changes the active digit in the current guess. */
+    method void selectAndMove(boolean left) {
+        if (debugging) {
+            do Util.printDebug("-> HLG.selectAndMove()!", 0);
+        }
+
+        if (left & ~(digit = 0)) {
+            let digit = digit - 1;
+            do arrow.move(true);
+        } 
+        if (~left & ~(digit = 2)) {
+            let digit = digit + 1;
+            do arrow.move(false);
+        }
+        do Sys.wait(5); // Delays the next movement.
+
+        return;
+    }
+
+    /** calculates the number of hits and blows for the current guess. */
+    method void evaluate() {
+        var String sNumber, gNumber; // String of of guess/secret number
+        var char sOne, sTwo, sThree;
+        var char gOne, gTwo, gThree;
+        var int hits, blows;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.evaluate()!", 0);
+        }
+
+        let hits = 0;
+        let blows = 0;
+        let guesses = guesses + 1;
+
+        // turn Array guess into a String
+        let gNumber = Util.arrayToString(guess, 3); // Array[int] -> String
+
+        // turn int number into a String
+        let sNumber = String.new(3);
+        do sNumber.setInt(number);  // int -> String
+
+        // get each digit of each String
+        let sOne = sNumber.charAt(0);
+        let sTwo = sNumber.charAt(1);
+        let sThree = sNumber.charAt(2);
+        let gOne = gNumber.charAt(0);
+        let gTwo = gNumber.charAt(1);
+        let gThree = gNumber.charAt(2);
+
+        // check how many hits and blows there were
+        if (gOne = sOne) {
+            let hits = hits + 1;
+        } else {
+            if (gOne = sTwo) {
+                let blows = blows + 1;
+            }
+            if (gOne = sThree) {
+                let blows = blows + 1;
+            }
+        }
+
+        if (gTwo = sTwo) {
+            let hits = hits + 1;
+        } else {
+            if (gTwo = sOne) {
+                let blows = blows + 1;
+            }
+            if (gTwo = sThree) {
+                let blows = blows + 1;
+            }
+        }
+
+        if (gThree = sThree) {
+            let hits = hits + 1;
+        } else {
+            if (gThree = sOne) {
+                let blows = blows + 1;
+            }
+            if (gThree = sTwo) {
+                let blows = blows + 1;
+            }
+        }
+
+        // draw the guess and its evaluation
+        do drawEval(hits, blows);
+
+        // compare the Strings themselves
+        if (hits = 3) {
+            do Util.println("  You Win!  ", 1, wSixteenth * 11 / 10);
+            let endGame = true;
+        } else {
+            if (guesses = 8) {
+                do Util.println("  You Lose! ", 1, wSixteenth * 11 / 10);
+                let endGame = true;
+            } else {
+                do Util.println("Try Again...", 1, wSixteenth * 11 / 10);
+            }
+        }
+
+        do sNumber.dispose();
+        do gNumber.dispose();
+
+        return;
+    }
+
+    /** draws the current guess and its evaluation, and increments drawY. */
+    method void drawEval(int hits, int blows) {
+        var String guessTemp, guessOne, guessTwo, guessThree;
+        var String guessBlows, guessVal, evaluation;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.drawEval()!", 0);
+        }
+
+        let evaluation = String.new(3);
+        do evaluation.setInt(hits);
+        let guessBlows = String.new(1);
+        do guessBlows.setInt(blows);
+        let evaluation = evaluation.appendChar(45); // '-'
+        let evaluation = Util.concat(evaluation, guessBlows, false);
+
+        let guessOne = String.new(1);
+        let guessTwo = String.new(1);
+        let guessThree = String.new(1);
+        let guessTemp = String.new(6);
+
+        do guessOne.setInt(guess[0]);
+        do guessTwo.setInt(guess[1]);
+        do guessThree.setInt(guess[2]);
+        let guessVal = String.new(3);
+        let guessVal = Util.concat(guessOne, guessTwo, true);
+        let guessTemp = Util.concat(guessThree, "     ", true);
+        let guessVal = Util.concat(guessVal, guessTemp, false);
+
+        do Util.println(Util.concat(guessVal, evaluation, true), 2 + (guesses * 2), 3);
+
+        do guessBlows.dispose();
+        do guessTemp.dispose();
+
+        return;
+    }
+
+    /** draws the card borders, frame, and column headings for the game. */
+    method void drawFrame() {
+        var int frameX1, frameY1, frameX2, frameY2;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.drawFrame()!", 0);
+        }
+
+        // draw the frame divider
+        let frameX1 = wFourth;
+        let frameY1 = 0;
+        let frameX2 = wFourth + borderThickness;
+        let frameY2 = screenHeight - 1;
+
+        do Screen.setColor(true);   // all further draw commands will be in black
+        do Screen.drawRectangle(frameX1, frameY1, frameX2, frameY2);        
+
+        // draw the column headings
+        do Util.println(" Guess     Eval", 0, 0);
+
+        return;
+    }
+
+    /** Changes the current card to display the correct number. */
+    method void drawCards() {
+        var int cardX1, cardY1, cardX2, cardY2;
+        var int cardHeight, cardsDrawn;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.drawCards()!", 0);
+        }
+
+        // draw the cards
+        let cardHeight = hHalf - hSixteenth;
+        let cardX1 = wFourth + (cardWidth * 2 / 3);
+        let cardY1 = hSixteenth * 3;
+        let cardX2 = cardX1 + cardWidth;
+        let cardY2 = cardY1 + cardHeight;
+
+        let cardsDrawn = 0;
+        while (cardsDrawn < 3) {
+            // draw this card
+            do Screen.drawRectangle(cardX1, cardY1, cardX2, cardY2);
+            do Screen.setColor(false);
+            do Screen.drawRectangle(cardX1 + borderThickness, cardY1 + borderThickness, cardX2 - borderThickness, cardY2 - borderThickness);
+            do Screen.setColor(true);           
+
+            // set up the next card to be drawn
+            let cardX1 = cardX1 + cardWidth + cardGap;
+            let cardX2 = cardX2 + cardWidth + cardGap;
+            let cardsDrawn = cardsDrawn + 1;
+        }
+
+        return;
+    }
+
+    /** Draw the numbers in the cards. */
+    method void drawNumbers() {
+        var String cardVal;
+        var int cardNum, numStart;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.drawNumbers()!", 0);
+        }
+
+        let cardNum = guess[digit];
+        let numStart = cardGap;
+
+        let cardVal = String.new(1);
+        do cardVal.setInt(cardNum);
+
+        do Util.println(cardVal, hThirtySecond + 1, numStart * (digit + 2) / 2);
+
+        do cardVal.dispose();
+
+        return;
+    }
+
+    /** Asks the player if they want to play another game. */
+    method boolean confirmAgain() {
+        var char key;
+        var boolean waiting, again;
+        var int newSeed;
+
+        if (debugging) {
+            do Util.printDebug("-> HLG.confirmAgain()!", 0);
+        }
+
+        if (endAll) {
+            do sayGoodbye();
+
+            return false;
+        }
+
+        do Screen.setColor(false);
+        do Screen.drawRectangle(wFourth, hFourth, wHalf + wFourth, hHalf + hFourth);
+        do Screen.setColor(true);
+
+        do Util.println("Play Again? Y/N", hThirtySecond * 3 / 2, wThirtySecond * 3 / 2);
+
+        // capture keyboard input
+        let newSeed = 0;
+        let waiting = true;
+        while (waiting) {
+            // waits for a key to be pressed.
+            while (key = 0) {
+                let key = Keyboard.keyPressed();
+                let newSeed = newSeed + 1;
+            }
+
+            if (key = 89) {    // Y
+                let again = true;
+                let waiting = false;
+                do Screen.clearScreen();
+            }
+            if (key = 78) {    // N
+                let again = false;
+                let waiting = false;
+                do sayGoodbye();
+            }
+
+            // waits for the key to be released.
+            while (~(key = 0)) {
+                let key = Keyboard.keyPressed();
+                let newSeed = newSeed + 1;
+            }
+        }
+            
+        do LCGRandom.setSeed(newSeed);
+
+        return again;
+    }
+
+    method void sayGoodbye() {
+        do Screen.clearScreen();
+
+        do Util.println("Goodbye!", hThirtySecond * 3 / 2, wThirtySecond * 3 / 2);
+
+        return;
+    }
+
+}

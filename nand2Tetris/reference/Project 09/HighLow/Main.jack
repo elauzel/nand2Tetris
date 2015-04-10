@@ -1,0 +1,33 @@
+/**
+ * The Main class initializes a new High-Low game and starts it.
+ */
+class Main {
+    static int screenHeight;   // rows in the screen
+    static int screenWidth;    // columns in the screen
+
+    /** Initializes the game loop. */    
+    function void main() {  
+	    var boolean playing;
+	    var HiLoGame game;
+
+	    // 256 pixels but 22 total columns
+	    let screenHeight = 256;
+	    // 512 pixels but 64 total columns
+	    let screenWidth = 512;
+
+	    do Util.init();
+	    do SplashScreen.start(screenWidth, screenHeight);
+        do LCGRandom.setSeed(SplashScreen.getSeed());
+
+    	let playing = true;
+    	while (playing) {
+			let game = HiLoGame.new(screenWidth, screenHeight);
+        	do game.run();
+        	let playing = game.confirmAgain();
+    	}
+    	do game.dispose();
+
+        return;
+    }
+
+}

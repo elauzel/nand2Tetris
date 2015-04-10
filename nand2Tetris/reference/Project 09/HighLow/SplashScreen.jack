@@ -1,0 +1,67 @@
+
+class SplashScreen {
+    static int screenWidth, screenHeight;
+
+	static int seed;
+	static boolean debugging;
+
+	function void start(int width, int height) {
+		var char key;
+        var boolean waiting;
+
+        let debugging = false;
+        let screenWidth = width;
+        let screenHeight = height;
+		let seed = 0;
+
+        if (debugging) {
+            do Util.printDebug("-> Spl.confirmAgain()!", 0);
+        }
+
+        // print instructions to screen
+        do Util.println("High-Low", 1, 28);
+        
+        do Util.println("Jeremy Gilreath 2015", 3, 22);
+        
+        do Util.println("Three cards are turned face over, each with a value ranging from 1-9, with no card used more than once. It is your job to guess the three-digit number the cards represent. Each time you guess,you are told how many cards are correct and in the correct order(called a 'Hit') followed by how many cards are correct but out", 5, 0);
+        do Util.println("of order (called a 'Blow.') By guessing the correct number", 10, 3);
+        do Util.println("within 8 attempts, you win the game.", 11, 14);
+        
+        do Util.println("For example, if the number is '526' and you guess '123,' you'd", 13, 0);
+        do Util.println("be given an evaluation of '1-0' for 1 Hit and 2 Blows.", 14, 4);
+        
+        do Util.println("  The 'left' and 'right' keys are used move between the cards,  while the 'up' and 'down' keys are used to increase or decrease the current card value. The 'g' key is used to make your guess,     and the 'q' or 'escape' keys are used to quit the game.", 16, 0);
+        
+        do Util.println("Press Spacebar to play!", 21, 20);
+
+        // capture keyboard input
+        let waiting = true;
+        while (waiting) {
+            // waits for a key to be pressed.
+            while (key = 0) {
+                let key = Keyboard.keyPressed();
+                let seed = seed + 1;
+            }
+
+            do Screen.clearScreen();
+
+            if (key = 32) {    // spacebar
+                let waiting = false;
+            }
+
+            // waits for the key to be released.
+            while (~(key = 0)) {
+                let key = Keyboard.keyPressed();
+                let seed = seed + 1;
+            }
+        }
+
+        return;
+	}
+
+	/** Returns the starting seed for the game. */
+	function int getSeed() {
+		return seed;
+	}
+
+}
