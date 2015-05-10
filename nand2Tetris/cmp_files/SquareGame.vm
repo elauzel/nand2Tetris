@@ -1,0 +1,271 @@
+	// // This file is part of www.nand2tetris.org
+	// // and the book "The Elements of Computing Systems"
+	// // by Nisan and Schocken, MIT Press.
+	// // File name: projects/09/Square/SquareGame.jack
+	// 
+	// /**
+	//  * Implements the Square Dance game.
+	//  * In this game you can move a black square around the screen and
+	//  * change its size during the movement.
+	//  * In the beginning, the square is located at the top-left corner
+	//  * of the screen. The arrow keys are used to move the square.
+	//  * The 'z' & 'x' keys are used to decrement and increment the size.
+	//  * The 'q' key is used to quit the game.
+	//  */
+	// class SquareGame {
+	// 
+	//     // The square
+	//     field Square square;
+	// 
+	//     // The square's movement direction
+	//     field int direction; // 0=none,1=up,2=down,3=left,4=right
+	// 
+	//     /** Constructs a new Square Game. */
+	//     constructor SquareGame new() {
+	//         let square = Square.new(0, 0, 30);
+function SquareGame.new 0 // Returns SquareGame
+push constant 5
+call Memory.alloc 1
+pop pointer 0
+push constant 0
+push constant 0
+push constant 30
+call Square.new 3
+pop this 3 // FIELD square
+	//         let direction = 0;
+push constant 0
+pop this 4 // FIELD direction
+	// 
+	//         return this;
+push pointer 0
+return
+	//     }
+	// 
+	//     /** Deallocates the object's memory. */
+	//     method void dispose() {
+	//         do square.dispose();
+function SquareGame.dispose 0 // Returns void
+push argument 0
+pop pointer 0
+call square.dispose 0
+pop temp 0
+	//         do Memory.deAlloc(this);
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+	//         return;
+push constant 0
+return
+	//     }
+	// 
+	//     /** Starts the game. Handles inputs from the user that control
+	//      *  the square's movement, direction and size. */
+	//     method void run() {
+	//         var char key;
+	//         var boolean exit;
+	// 
+	//         let exit = false;
+function SquareGame.run 2 // Returns void
+push argument 0
+pop pointer 0
+push constant 0
+pop local 1 // VAR exit
+	// 
+	//         while (~exit) {
+label $WHILE_EXP12
+push local 1 // VAR exit
+not
+not
+if-goto $WHILE_END13
+	//             // waits for a key to be pressed.
+	//             while (key = 0) {
+label $WHILE_EXP14
+push local 0 // VAR key
+push constant 0
+eq
+not
+if-goto $WHILE_END15
+	//                 let key = Keyboard.keyPressed();
+call Keyboard.keyPressed 0
+pop local 0 // VAR key
+	//                 do moveSquare();
+pop temp 0
+	//             }
+	// 
+	//             if (key = 81) {
+goto $WHILE_EXP14
+label $WHILE_END15
+push local 0 // VAR key
+push constant 81
+eq
+	//                 let exit = true;
+if-goto $IF_TRUE16
+goto $IF_FALSE17
+label $IF_TRUE16
+push constant 0
+not
+pop local 1 // VAR exit
+	//             }
+	//             if (key = 90) {
+label $IF_FALSE17
+push local 0 // VAR key
+push constant 90
+eq
+	//                 do square.decSize();
+if-goto $IF_TRUE18
+goto $IF_FALSE19
+label $IF_TRUE18
+call square.decSize 0
+pop temp 0
+	//             }
+	//             if (key = 88) {
+label $IF_FALSE19
+push local 0 // VAR key
+push constant 88
+eq
+	//                 do square.incSize();
+if-goto $IF_TRUE20
+goto $IF_FALSE21
+label $IF_TRUE20
+call square.incSize 0
+pop temp 0
+	//             }
+	//             if (key = 131) {
+label $IF_FALSE21
+push local 0 // VAR key
+push constant 131
+eq
+	//                 let direction = 1;
+if-goto $IF_TRUE22
+goto $IF_FALSE23
+label $IF_TRUE22
+push constant 1
+pop this 4 // FIELD direction
+	//             }
+	//             if (key = 133) {
+label $IF_FALSE23
+push local 0 // VAR key
+push constant 133
+eq
+	//                 let direction = 2;
+if-goto $IF_TRUE24
+goto $IF_FALSE25
+label $IF_TRUE24
+push constant 2
+pop this 4 // FIELD direction
+	//             }
+	//             if (key = 130) {
+label $IF_FALSE25
+push local 0 // VAR key
+push constant 130
+eq
+	//                 let direction = 3;
+if-goto $IF_TRUE26
+goto $IF_FALSE27
+label $IF_TRUE26
+push constant 3
+pop this 4 // FIELD direction
+	//             }
+	//             if (key = 132) {
+label $IF_FALSE27
+push local 0 // VAR key
+push constant 132
+eq
+	//                 let direction = 4;
+if-goto $IF_TRUE28
+goto $IF_FALSE29
+label $IF_TRUE28
+push constant 4
+pop this 4 // FIELD direction
+	//             }
+	// 
+	//             // waits for the key to be released.
+	//             while (~(key = 0)) {
+label $IF_FALSE29
+label $WHILE_EXP30
+push local 0 // VAR key
+push constant 0
+eq
+not
+not
+if-goto $WHILE_END31
+	//                 let key = Keyboard.keyPressed();
+call Keyboard.keyPressed 0
+pop local 0 // VAR key
+	//                 do moveSquare();
+pop temp 0
+	//             }
+	//         }
+goto $WHILE_EXP30
+label $WHILE_END31
+	//             
+	//         return;
+goto $WHILE_EXP12
+label $WHILE_END13
+push constant 0
+return
+	// 	}
+	// 
+	//     /** Moves the square by 2 pixels in the current direction. */
+	//     method void moveSquare() {
+	//         if (direction = 1) {
+function SquareGame.moveSquare 0 // Returns void
+push argument 0
+pop pointer 0
+push this 4 // FIELD direction
+push constant 1
+eq
+	//             do square.moveUp();
+if-goto $IF_TRUE32
+goto $IF_FALSE33
+label $IF_TRUE32
+call square.moveUp 0
+pop temp 0
+	//         }
+	//         if (direction = 2) {
+label $IF_FALSE33
+push this 4 // FIELD direction
+push constant 2
+eq
+	//             do square.moveDown();
+if-goto $IF_TRUE34
+goto $IF_FALSE35
+label $IF_TRUE34
+call square.moveDown 0
+pop temp 0
+	//         }
+	//         if (direction = 3) {
+label $IF_FALSE35
+push this 4 // FIELD direction
+push constant 3
+eq
+	//             do square.moveLeft();
+if-goto $IF_TRUE36
+goto $IF_FALSE37
+label $IF_TRUE36
+call square.moveLeft 0
+pop temp 0
+	//         }
+	//         if (direction = 4) {
+label $IF_FALSE37
+push this 4 // FIELD direction
+push constant 4
+eq
+	//             do square.moveRight();
+if-goto $IF_TRUE38
+goto $IF_FALSE39
+label $IF_TRUE38
+call square.moveRight 0
+pop temp 0
+	//         }
+	// 
+	//         do Sys.wait(5); // Delays the next movement.
+label $IF_FALSE39
+push constant 5
+call Sys.wait 1
+pop temp 0
+	//         return;
+push constant 0
+return
+	//     }
+	// }

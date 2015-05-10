@@ -166,7 +166,6 @@ public class VMWriter {
 			ioe.printStackTrace();
 			System.exit(1);
 		}
-
 		flush();
 	}
 
@@ -207,6 +206,15 @@ public class VMWriter {
 				throwException("Unexpected segment " + seg + "!");
 		}
 		return stringRep;
+	}
+
+	/**
+	 * Writes a comment to the output file
+	 * 
+	 * @param comment
+	 */
+	public void writeComment(String comment) {
+		writeLine("\t// " + comment);
 	}
 
 	/**

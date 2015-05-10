@@ -1,0 +1,39 @@
+--- C:\nand2tetris\tools\test\Main.vm
++++ C:\nand2tetris\tools\testCorrect\Main.vm
+@@ -1,30 +1,11 @@
+-	// // This file is part of www.nand2tetris.org
+-	// // and the book "The Elements of Computing Systems"
+-	// // by Nisan and Schocken, MIT Press.
+-	// // File name: projects/09/Square/Main.jack
+-	// 
+-	// /**
+-	//  * The Main class initializes a new Square Dance game and starts it.
+-	//  */
+-	// class Main {
+-	// 
+-	//     /** Initializes a new game and starts it. */    
+-	//     function void main() {
+-	//         var SquareGame game;
+-	// 
+-	//         let game = SquareGame.new();
+-function Main.main 1 // Returns void
++function Main.main 1
+ call SquareGame.new 0
+-pop local 0 // VAR game
+-	//         do game.run();
+-call game.run 0
++pop local 0
++push local 0
++call SquareGame.run 1
+ pop temp 0
+-	// 	do game.dispose();
+-call game.dispose 0
++push local 0
++call SquareGame.dispose 1
+ pop temp 0
+-	// 
+-	//         return;
+ push constant 0
+ return
+-	//     }
+-	// }

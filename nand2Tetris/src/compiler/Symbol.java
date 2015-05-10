@@ -35,4 +35,8 @@ public class Symbol {
 		this.index = index;
 	}
 
+	public String toString() {
+		return "Symbol:\tType - " + type + "\tKind - " + kind + "\tIndex - " + index;
+	}
+
 }

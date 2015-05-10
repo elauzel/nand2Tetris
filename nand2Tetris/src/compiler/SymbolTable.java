@@ -25,7 +25,6 @@ public class SymbolTable {
 
 		startSubroutine();
 		symbolsClass = new HashMap<String, Symbol>();
-		// classIndex = 0;
 		staticCount = 0;
 		fieldCount = 0;
 	}
@@ -36,14 +35,14 @@ public class SymbolTable {
 	public void startSubroutine() {
 		scope = Scope.SUBROUTINE;
 		symbolsSubroutine = new HashMap<String, Symbol>();
-		// subroutineIndex = 0;
+		// define("~this~", "this", Identifier.ARG);
 		argCount = 0;
 		varCount = 0;
 	}
 
 	/**
-	 * Defines a new identifier of a given name, type, and kind and assigns it a running index. <STATIC> and <FIELD> identifiers have a class scope,
-	 * while <ARG> and <VAR> identifiers have a subroutine scope.
+	 * Defines a new identifier of a given name, type, and kind and assigns it a running index. STATIC and FIELD identifiers have a class scope, while ARG
+	 * and VAR identifiers have a subroutine scope.
 	 * 
 	 * @param name
 	 * @param type
@@ -165,7 +164,7 @@ public class SymbolTable {
 	 */
 	public Identifier kindOf(String name) {
 		Identifier id;
-		Symbol sym = getSymbol(name, scope);
+		Symbol sym = getSymbol(name);
 		if (sym == null) {
 			id = Identifier.NONE;
 		} else {
@@ -181,7 +180,7 @@ public class SymbolTable {
 	 * @return
 	 */
 	public String typeOf(String name) {
-		return getSymbol(name, scope).getType();
+		return getSymbol(name).getType();
 	}
 
 	/**
@@ -191,7 +190,7 @@ public class SymbolTable {
 	 * @return
 	 */
 	public int indexOf(String name) {
-		return getSymbol(name, scope).getIndex();
+		return getSymbol(name).getIndex();
 	}
 
 	/**
@@ -213,11 +212,9 @@ public class SymbolTable {
 	 * @param name
 	 * @return
 	 */
-	public Symbol getSymbol(String name, Scope s) {
-		Symbol sym;
-		if (s == Scope.SUBROUTINE) {
-			sym = symbolsSubroutine.get(name);
-		} else {
+	private Symbol getSymbol(String name) {
+		Symbol sym = symbolsSubroutine.get(name);
+		if (sym == null) {
 			sym = symbolsClass.get(name);
 		}
 		return sym;

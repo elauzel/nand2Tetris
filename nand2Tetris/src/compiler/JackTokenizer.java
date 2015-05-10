@@ -22,6 +22,7 @@ public class JackTokenizer {
 	private static HashMap<Character, TokenType>	tokenTypes2;
 
 	private BufferedReader							br;
+	private VMWriter								vmw;
 	private String									currentLine, currentToken;
 	private boolean									commentJavaDoc, partOfString;
 	private int										numLines;
@@ -206,10 +207,10 @@ public class JackTokenizer {
 		String formatted = String.format("%03d", ++numLines);
 		try {
 			currentLine = br.readLine();
+			if (vmw != null) vmw.writeComment(currentLine);
 			DEBUG_PRINT("    " + formatted + ") Next line:\t\"" + currentLine + "\"");
 			formatLine();
 			if (!hasMoreTokens()) nextLine();
-
 		} catch (IOException ioe) {
 			System.err.println("Couldn't read the next line!");
 			ioe.printStackTrace();
@@ -375,4 +376,12 @@ public class JackTokenizer {
 		return currentToken.substring(1, currentToken.length() - 1);
 	}
 
+	/**
+	 * Allows the writing of the source code as comments along with the VM output
+	 * 
+	 * @param vmw
+	 */
+	public void writeSourceTo(VMWriter vmw) {
+		this.vmw = vmw;
+	}
 }

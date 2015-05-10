@@ -95,7 +95,7 @@ public class Utils {
 	 * @return
 	 */
 	public static String uniqueLabel(String label) {
-		return "$" + label + "_" + serial++;
+		return "$" + label + serial++;
 	}
 
 	/**

@@ -1,0 +1,203 @@
+	// // This file is part of www.nand2tetris.org
+	// // and the book "The Elements of Computing Systems"
+	// // by Nisan and Schocken, MIT Press.
+	// // File name: projects/11/ConvertToBin/Main.jack
+	// 
+	// /**
+	//  * Unpacks a 16-bit number into its binary representation:
+	//  * Takes the 16-bit number stored in RAM[8000] and stores its individual 
+	//  * bits in RAM[8001..8016] (each location will contain 0 or 1).
+	//  * Before the conversion, RAM[8001]..RAM[8016] are initialized to -1.
+	//  * 
+	//  * The program should be tested as follows:
+	//  * 1) Load the program into the supplied VM Emulator
+	//  * 2) Put some value in RAM[8000]
+	//  * 3) Switch to "no animation"
+	//  * 4) Run the program (give it enough time to run)
+	//  * 5) Stop the program
+	//  * 6) Check that RAM[8001]..RAM[8016] contains the correct binary result, and
+	//  *    that none of these memory locations contain -1.
+	//  */
+	// class Main {
+	//     
+	//     /**
+	//      * Initializes RAM[8001]..RAM[8016] to -1, and converts the value in
+	//      * RAM[8000] to binary.
+	//      */
+	//     function void main() {
+	// 	var int result, value;
+	//         
+	//         do Main.fillMemory(8001, 16, -1); // sets RAM[8001]..RAM[8016] to -1
+function Main.main 2 // Returns void
+push constant 8001
+push constant 16
+push constant 1
+neg
+call Main.fillMemory 3
+pop temp 0
+	//         let value = Memory.peek(8000);    // reads a value from RAM[8000]
+push constant 8000
+call Memory.peek 1
+pop local 1 // VAR value
+	// 	do Main.convert(value);           // perform the conversion
+push local 1 // VAR value
+call Main.convert 1
+pop temp 0
+	//     
+	//     	return;
+push constant 0
+return
+	//     }
+	//     
+	//     /** Converts the given decimal value to binary, and puts 
+	//      *  the resulting bits in RAM[8001]..RAM[8016]. */
+	//     function void convert(int value) {
+	//     	var int mask, position;
+	//     	var boolean loop;
+	//     	
+	//     	let loop = true;
+function Main.convert 3 // Returns void
+push constant 0
+not
+pop local 2 // VAR loop
+	//  
+	//     	while (loop) {
+label $WHILE_EXP0
+push local 2 // VAR loop
+not
+if-goto $WHILE_END1
+	//     	    let position = position + 1;
+push local 1 // VAR position
+push constant 1
+add
+pop local 1 // VAR position
+	//     	    let mask = Main.nextMask(mask);
+push local 0 // VAR mask
+call Main.nextMask 1
+pop local 0 // VAR mask
+	//             do Memory.poke(9000 + position, mask);
+push constant 9000
+push local 1 // VAR position
+add
+push local 0 // VAR mask
+call Memory.poke 2
+pop temp 0
+	//     	
+	//     	    if (~(position > 16)) {
+push local 1 // VAR position
+push constant 16
+gt
+not
+	//     	
+	//     	        if (~((value & mask) = 0)) {
+if-goto $IF_TRUE2
+goto $IF_FALSE3
+label $IF_TRUE2
+push argument 0 // ARG value
+push local 0 // VAR mask
+and
+push constant 0
+eq
+not
+	//     	            do Memory.poke(8000 + position, 1);
+if-goto $IF_TRUE5
+goto $IF_FALSE6
+label $IF_TRUE5
+push constant 8000
+push local 1 // VAR position
+add
+push constant 1
+call Memory.poke 2
+pop temp 0
+	//        	        }
+	//     	        else {
+goto $IF_END7
+label $IF_FALSE6
+	//     	            do Memory.poke(8000 + position, 0);
+push constant 8000
+push local 1 // VAR position
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+	//       	        }    
+label $IF_END7
+	//     	    }
+	//     	    else {
+goto $IF_END4
+label $IF_FALSE3
+	//     	        let loop = false;
+push constant 0
+pop local 2 // VAR loop
+	//     	    }
+label $IF_END4
+	//     	}
+	//     	
+	//     	return;
+goto $WHILE_EXP0
+label $WHILE_END1
+push constant 0
+return
+	//     }
+	//  
+	//     /** Returns the next mask (the mask that should follow the given mask). */
+	//     function int nextMask(int mask) {
+	//     	if (mask = 0) {
+function Main.nextMask 0 // Returns int
+push argument 0 // ARG mask
+push constant 0
+eq
+	//     	    return 1;
+if-goto $IF_TRUE8
+goto $IF_FALSE9
+label $IF_TRUE8
+push constant 1
+return
+	//     	}
+	//     	else {
+goto $IF_END10
+label $IF_FALSE9
+	// 	    return mask * 2;
+push argument 0 // ARG mask
+push constant 2
+call Math.multiply 2
+return
+	//     	}
+label $IF_END10
+	//     }
+	//     
+	//     /** Fills 'length' consecutive memory locations with 'value',
+	//       * starting at 'startAddress'. */
+	//     function void fillMemory(int startAddress, int length, int value) {
+	//         while (length > 0) {
+function Main.fillMemory 0 // Returns void
+label $WHILE_EXP11
+push argument 1 // ARG length
+push constant 0
+gt
+not
+if-goto $WHILE_END12
+	//             do Memory.poke(startAddress, value);
+push argument 0 // ARG startAddress
+push argument 2 // ARG value
+call Memory.poke 2
+pop temp 0
+	//             let length = length - 1;
+push argument 1 // ARG length
+push constant 1
+sub
+pop argument 1 // ARG length
+	//             let startAddress = startAddress + 1;
+push argument 0 // ARG startAddress
+push constant 1
+add
+pop argument 0 // ARG startAddress
+	//         }
+	//         
+	//         return;
+goto $WHILE_EXP11
+label $WHILE_END12
+push constant 0
+return
+	//     }
+	// }

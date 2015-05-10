@@ -5,16 +5,16 @@ import java.io.File;
 import static utility.Utils.*;
 
 /**
- * The analyzer program operates on a given source, where source is either a file name in the form Xxx.jack or a directory name containing one or
- * more such files. For each source Xxx.jack file, the analyzer creates a JackTokenizer from the Xxx.jack input file, creates an output file called
- * Xxx.xml and prepares it for writing, and uses the CompilationEngine to compile the input JackTokenizer into the output file.
+ * The analyzer program operates on a given source, where source is either a file name in the form Xxx.jack or a directory name containing one or more
+ * such files. For each source Xxx.jack file, the analyzer creates a JackTokenizer from the Xxx.jack input file, creates an output file called Xxx.xml and
+ * prepares it for writing, and uses the CompilationEngine to compile the input JackTokenizer into the output file.
  * 
  * @author Jeremy Wayne Gilreath
  *
  */
 public class JackAnalyzer {
 	private static final String		INPUT		= "cmp_files/";
-	private static final String[]	programs	= { "Main.jack" };
+	private static final String[]	programs	= { "Main.jack", "Square.jack", "SquareGame.jack" };
 
 	public static void main(String[] args) {
 		File[] files = getFiles(INPUT, programs, args);

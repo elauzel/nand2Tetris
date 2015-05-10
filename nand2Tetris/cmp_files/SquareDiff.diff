@@ -1,0 +1,33 @@
+--- C:\Dropbox\Development\[GitHub]\Local\nand2Tetris\nand2Tetris\cmp_files\Square.vm
++++ C:\Dropbox\Development\[GitHub]\Local\nand2Tetris\nand2Tetris\cmp_files\SquareCorrect.vm
+@@ -1,411 +1,304 @@
+	//         do draw();
++push pointer 0
++call Square.draw 1
+ pop temp 0
+
+	//             do erase();
+ if-goto $IF_TRUE0
+ goto $IF_FALSE1
+ label $IF_TRUE0
++push pointer 0
++call Square.erase 1
+ pop temp 0
+
+	//             do draw();
++push pointer 0
++call Square.draw 1
+ pop temp 0
+
+	//             do erase();
+ if-goto $IF_TRUE2
+ goto $IF_FALSE3
+ label $IF_TRUE2
++push pointer 0
++call Square.erase 1
+ pop temp 0
+
+	//             do draw();
++push pointer 0
++call Square.draw 1
+ pop temp 0
