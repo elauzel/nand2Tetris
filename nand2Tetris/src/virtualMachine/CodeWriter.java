@@ -2,7 +2,6 @@ package virtualMachine;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import utility.Segment;
 import static utility.Utils.*;
 
 /**
